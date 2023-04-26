@@ -233,10 +233,13 @@ public class login_gui extends javax.swing.JFrame {
 
                 if (rs.next()) {
                     JOptionPane.showMessageDialog(this, "Logged in!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    int empId = Integer.parseInt(rs.getString("employee_id"));
+                    int uRoleId = Integer.parseInt(rs.getString("employee_id"));
+
                     if (user_role.equals("Admin")) {
-                        new dashBoard_gui(2,username).setVisible(true);
+                        new dashBoard_gui(2, empId, username, uRoleId).setVisible(true);
                     } else {
-                        new dashBoard_gui(1,username).setVisible(true);
+                        new dashBoard_gui(1, empId, username, uRoleId).setVisible(true);
                     }
                     this.dispose();
                 } else {

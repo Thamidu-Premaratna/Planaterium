@@ -15,6 +15,10 @@ import model.DbConnect;
 
 public class dashBoard_gui extends javax.swing.JFrame {
 
+//Private variables
+    private int userRoleId;
+    private int employeeId;
+
 //Clear Employee fields
     private void clearEmployeeFields() {
         tf_emp_id.setText("");
@@ -111,23 +115,47 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         return exits;
     }
+//Check if the show exits (using employee-id), returns a boolean to the caller
+
+    private boolean chechShowExists(int showId) {
+        boolean exits = false;
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `show` WHERE `show_id` = ?");
+            stmt.setInt(1, showId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                exits = true;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return exits;
+    }
 
     public dashBoard_gui() {
         initComponents();
     }
 
 //Access control (Depending on user-role)
-    public dashBoard_gui(int i, String uname) {
+    public dashBoard_gui(int loginType, int employeeId, String uname, int userTypeId) {
         initComponents();
+
+        //Set values to the private variables in this instance of the dashboard (session)
+        this.employeeId = employeeId;
+        this.userRoleId = userTypeId;
+
         label_uname.setText(uname);
-        switch (i) {
-            case 1 -> {
+        switch (loginType) {
+            case 1 -> { // Receptionist logged in, initializations
                 btn_payment.setEnabled(false);
                 btn_employee.setEnabled(false);
                 jtp.setEnabledAt(3, false);
                 jtp.setEnabledAt(4, false);
             }
-            case 2 -> {
+            case 2 -> { //Administrator logged in, initialiations
                 loadEmployeeTable();
                 loadEmployeeRoles();
             }
@@ -556,6 +584,11 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         btn_show_insert.setBackground(new java.awt.Color(0, 153, 153));
         btn_show_insert.setText("Insert");
+        btn_show_insert.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_show_insertActionPerformed(evt);
+            }
+        });
 
         btn_show_update.setBackground(new java.awt.Color(0, 153, 153));
         btn_show_update.setText("update");
@@ -1743,12 +1776,17 @@ public class dashBoard_gui extends javax.swing.JFrame {
         } else {
             //Check if the user exists
             if (chechEmployeeExists(Integer.parseInt(tf_emp_id.getText()))) {
-                
+
             } else {
                 JOptionPane.showMessageDialog(this, "User doesnot exists!", "Warning", JOptionPane.WARNING_MESSAGE);
             }
         }
     }//GEN-LAST:event_btn_emp_deleteActionPerformed
+
+    private void btn_show_insertActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_insertActionPerformed
+        //
+
+    }//GEN-LAST:event_btn_show_insertActionPerformed
 
     /**
      * @param args the command line arguments
