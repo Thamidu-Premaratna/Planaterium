@@ -115,9 +115,9 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         return exits;
     }
-//Check if the show exits (using employee-id), returns a boolean to the caller
+//Check if the show exits (using show-id), returns a boolean to the caller
 
-    private boolean chechShowExists(int showId) {
+    private boolean checkShowExists(int showId) {
         boolean exits = false;
         try {
             PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `show` WHERE `show_id` = ?");
