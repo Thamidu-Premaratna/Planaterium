@@ -226,7 +226,8 @@ public class login_gui extends javax.swing.JFrame {
             String username = tf_uname.getText();
             String user_role = cb_role.getSelectedItem().toString();
             try {
-                String query = "SELECT * FROM `login` WHERE `username` = ? AND `password` = ? AND `employee_id` IN(SELECT `id` FROM `employee` WHERE `role_id` IN(SELECT `id` FROM `role` WHERE `type` = ?))";
+                //User status and role will also be checked other that password and username
+                String query = "SELECT * FROM `login` WHERE `username` = ? AND `password` = ? AND `employee_id` IN(SELECT `id` FROM `employee` WHERE `role_id` IN(SELECT `id` FROM `role` WHERE `type` = ?) AND `status_id` = 1)";
                 PreparedStatement stmt = DbConnect.createConnection().prepareStatement(query);
                 stmt.setString(1, username);
                 stmt.setString(2, password);

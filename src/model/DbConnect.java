@@ -14,6 +14,7 @@ public class DbConnect {
 //------------------------------------------------------------------------------    
 //                     Create a new connection if it does not exists
 //------------------------------------------------------------------------------
+
     public static Connection createConnection() {
         try {
             if (connection == null || connection.isClosed()) {
@@ -26,8 +27,21 @@ public class DbConnect {
         return connection;
     }
 //------------------------------------------------------------------------------    
-//                      Extra functions (not used)
+//                      Close connection if it exists
 //------------------------------------------------------------------------------
+
+    public static void closeConnection() {
+        try {
+            if (connection != null || !connection.isClosed()) {
+                connection.close();
+            }
+        } catch (java.sql.SQLException e) {
+        }
+    }
+//------------------------------------------------------------------------------    
+//                      Extra functions (not used) - using Statement
+//------------------------------------------------------------------------------
+
     public static void iud(String query) { //Insert/Update/Delete using 'Statement'
         try {
             connection.createStatement().executeUpdate(query);

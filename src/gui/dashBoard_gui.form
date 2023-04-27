@@ -997,16 +997,22 @@
                         <Component class="javax.swing.JTable" name="table_show">
                           <Properties>
                             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-                              <Table columnCount="5" rowCount="0">
+                              <Table columnCount="6" rowCount="0">
                                 <Column editable="false" title="Show ID" type="java.lang.Object"/>
                                 <Column editable="false" title="Show Name" type="java.lang.Object"/>
                                 <Column editable="false" title="Starting Time" type="java.lang.Object"/>
                                 <Column editable="false" title="Ending Time" type="java.lang.Object"/>
                                 <Column editable="false" title="Show date" type="java.lang.Object"/>
+                                <Column editable="false" title="Employee ID" type="java.lang.Object"/>
                               </Table>
                             </Property>
                             <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
                               <TableColumnModel selectionModel="0">
+                                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                                  <Title/>
+                                  <Editor/>
+                                  <Renderer/>
+                                </Column>
                                 <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
                                   <Title/>
                                   <Editor/>
@@ -1551,7 +1557,7 @@
                         <Component class="javax.swing.JTable" name="table_emp">
                           <Properties>
                             <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-                              <Table columnCount="7" rowCount="0">
+                              <Table columnCount="8" rowCount="0">
                                 <Column editable="false" title="Emp-ID" type="java.lang.Object"/>
                                 <Column editable="false" title="First Name" type="java.lang.Object"/>
                                 <Column editable="false" title="Last Name" type="java.lang.Object"/>
@@ -1559,10 +1565,16 @@
                                 <Column editable="false" title="Tel No" type="java.lang.Object"/>
                                 <Column editable="false" title="Address" type="java.lang.Object"/>
                                 <Column editable="false" title="Role" type="java.lang.Object"/>
+                                <Column editable="false" title="Status" type="java.lang.Object"/>
                               </Table>
                             </Property>
                             <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
                               <TableColumnModel selectionModel="0">
+                                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                                  <Title/>
+                                  <Editor/>
+                                  <Renderer/>
+                                </Column>
                                 <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
                                   <Title/>
                                   <Editor/>
@@ -1860,7 +1872,7 @@
                         <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
                           <Color blue="99" green="99" red="0" type="rgb"/>
                         </Property>
-                        <Property name="text" type="java.lang.String" value="Delete"/>
+                        <Property name="text" type="java.lang.String" value="Toggle Status"/>
                       </Properties>
                       <Events>
                         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_emp_deleteActionPerformed"/>

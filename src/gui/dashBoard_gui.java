@@ -40,13 +40,14 @@ public class dashBoard_gui extends javax.swing.JFrame {
             if (rs.next()) {
                 exits = true;
             }
-
+            DbConnect.closeConnection();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         return exits;
     }
+
 //Clear Employee fields
     private void clearEmployeeFields() {
         tf_emp_id.setText("");
@@ -76,7 +77,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 v.add(rs.getString("role.type"));
                 dtm.addRow(v);
             }
-            DbConnect.connection.close();
+            DbConnect.closeConnection();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -97,7 +98,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
             }
             DefaultComboBoxModel dcbm = new DefaultComboBoxModel(v1);
             cb_emp_role.setModel(dcbm);
-            DbConnect.connection.close();
+            DbConnect.closeConnection();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -112,13 +113,71 @@ public class dashBoard_gui extends javax.swing.JFrame {
             if (rs.next()) {
                 cb_emp_role.setSelectedItem(type);
             }
-            DbConnect.connection.close();
+            DbConnect.closeConnection();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+//Insert funtion for employee data
+    private void insertEmployeeData(String fname, String lname, java.sql.Date dob, String mobile, String address, int roleId) {
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("INSERT INTO `employee`(fname,lname,dob,mobile,address,role_id,status_id) VALUES(?,?,?,?,?,?,?)");
+            stmt.setString(1, fname);
+            stmt.setString(2, lname);
+            stmt.setDate(3, dob);
+            stmt.setString(4, mobile);
+            stmt.setString(5, address);
+            stmt.setInt(6, roleId);
+            stmt.setInt(7, 1); // Status is by default 'Active' for new Employees
+            stmt.executeUpdate();
+
+            DbConnect.closeConnection();
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+//Update function for employee data (Except status change, There is a seperate function below for that)
+    private void updateEmployeeData(String fname, String lname, java.sql.Date dob, String mobile, String address, int roleId, int employeeId) {
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("UPDATE `employee` SET `fname`= ?,`lname`= ?,`dob`= ?,`mobile`= ?,`address`= ?,`role`= ? WHERE `employee_id`= ?");
+            stmt.setString(1, fname);
+            stmt.setString(2, lname);
+            stmt.setDate(3, dob);
+            stmt.setString(4, mobile);
+            stmt.setString(5, address);
+            stmt.setInt(6, roleId);
+            stmt.setInt(7, employeeId);
+            stmt.executeUpdate();
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
+    }
     
+//Toggle user status function for empoyee data
+    private void toggleEmployeeStatus(int employeeId) { // This only sets the employee `status` to 'Inactive' (Employee data will not be deleted)
+        try {
+            //Finding the current user status  
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `employee` WHERE `employee_id` = ?");
+            stmt.setInt(1, employeeId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                String query = "UPDATE `employee` SET `status_id` = 1 WHERE `employee_id` = ?";
+                if (rs.getInt("status_id") == 1) { // User is currently 'Active'
+                    query = "UPDATE `employee` SET `status_id` = 2 WHERE `employee_id` = ?";
+                }
+                PreparedStatement stmt2 = DbConnect.createConnection().prepareStatement(query);
+                stmt2.setInt(1, employeeId);
+            }
+            
+            DbConnect.closeConnection();
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 //------------------------------------------------------------------------------    
 //                              Show
 //------------------------------------------------------------------------------
@@ -140,29 +199,50 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         return exits;
     }
+//Load the Employee table dynamically by retrieving them from the database
 
-    public dashBoard_gui() {
-        initComponents();
+    private void loadShowTable() {
+        try {
+            ResultSet rs = DbConnect.createConnection().prepareStatement("SELECT * FROM `show`").executeQuery();
+            DefaultTableModel dtm = (DefaultTableModel) table_show.getModel();
+            dtm.setRowCount(0);
+            while (rs.next()) {
+                //Create new vector for each record of the table
+                Vector v = new Vector();
+                v.add(rs.getString("show_id"));
+                v.add(rs.getString("show_name"));
+                v.add(rs.getString("start_time"));
+                v.add(rs.getString("end_time"));
+                v.add(rs.getString("show_date"));
+                v.add(rs.getString("employee_id"));
+                dtm.addRow(v);
+            }
+            DbConnect.closeConnection();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
+
 //------------------------------------------------------------------------------    
 //                              Seat
 //------------------------------------------------------------------------------
-    
-    
-    
 //------------------------------------------------------------------------------    
 //                              Payment
 //------------------------------------------------------------------------------ 
-    
-    
-    
 //------------------------------------------------------------------------------    
 //                              Dashboard constructors
 //------------------------------------------------------------------------------
+    public dashBoard_gui() {
+        initComponents();
+    }
+
 //Access control (Depending on user-role)
     public dashBoard_gui(int loginType, int employeeId, String uname, int userTypeId) {
         initComponents();
 
+        //Loading things common to all access levels
+        loadShowTable();
         //Set values to the private variables in this instance of the dashboard (session)
         this.employeeId = employeeId;
         this.userRoleId = userTypeId;
@@ -724,11 +804,11 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
             },
             new String [] {
-                "Show ID", "Show Name", "Starting Time", "Ending Time", "Show date"
+                "Show ID", "Show Name", "Starting Time", "Ending Time", "Show date", "Employee ID"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false
+                false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -1029,11 +1109,11 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
             },
             new String [] {
-                "Emp-ID", "First Name", "Last Name", "DOB", "Tel No", "Address", "Role"
+                "Emp-ID", "First Name", "Last Name", "DOB", "Tel No", "Address", "Role", "Status"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -1117,7 +1197,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         });
 
         btn_emp_delete.setBackground(new java.awt.Color(0, 153, 153));
-        btn_emp_delete.setText("Delete");
+        btn_emp_delete.setText("Toggle Status");
         btn_emp_delete.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btn_emp_deleteActionPerformed(evt);
@@ -1721,7 +1801,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                         stmt.setString(6, tf_emp_address.getText());
                         stmt.setInt(7, cb_emp_role.getSelectedIndex());
                         stmt.executeUpdate();
-                        DbConnect.connection.close();
+                        DbConnect.closeConnection();
                         JOptionPane.showMessageDialog(this, "Employee details entered!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
                         //Clear all fields
@@ -1769,7 +1849,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                         stmt.setString(5, tf_emp_address.getText());
                         stmt.setInt(6, cb_emp_role.getSelectedIndex());
                         stmt.executeUpdate();
-                        DbConnect.connection.close();
+                        DbConnect.closeConnection();
                         JOptionPane.showMessageDialog(this, "Employee details updated!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
                         //Clear all fields
