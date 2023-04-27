@@ -31,7 +31,9 @@ public class login_gui extends javax.swing.JFrame {
             ex.printStackTrace();
         }
     }
-
+//------------------------------------------------------------------------------    
+//                              Login constructor
+//------------------------------------------------------------------------------
     public login_gui() {
         initComponents();
         btn_login.requestFocus();

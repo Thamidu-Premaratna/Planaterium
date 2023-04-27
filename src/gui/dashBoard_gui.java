@@ -15,10 +15,38 @@ import model.DbConnect;
 
 public class dashBoard_gui extends javax.swing.JFrame {
 
-//Private variables
+//Private global variables
     private int userRoleId;
     private int employeeId;
 
+//Method to get the sql.Date from a util.Date    
+    private java.sql.Date getSQLDate(JDateChooser chooser) {
+        java.util.Date utilDate = chooser.getDate();
+        java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
+        return sqlDate;
+    }
+
+//------------------------------------------------------------------------------    
+//                              Employee
+//------------------------------------------------------------------------------ 
+//Check if the employee exits (using employee-id), returns a boolean to the caller
+    private boolean checkEmployeeExists(int empId) {
+        boolean exits = false;
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `employee` WHERE `employee_id` = ?");
+            stmt.setInt(1, empId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                exits = true;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return exits;
+    }
 //Clear Employee fields
     private void clearEmployeeFields() {
         tf_emp_id.setText("");
@@ -28,13 +56,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
         tf_emp_address.setText("");
         cb_emp_role.setSelectedIndex(0);
         dc_emp_dob.setDate(null);
-    }
-
-//Method to get the sql.Date from a util.Date    
-    private java.sql.Date getSQLDate(JDateChooser chooser) {
-        java.util.Date utilDate = chooser.getDate();
-        java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
-        return sqlDate;
     }
 
 //Load the Employee table dynamically by retrieving them from the database
@@ -97,26 +118,11 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
     }
 
-//Check if the employee exits (using employee-id), returns a boolean to the caller
-    private boolean chechEmployeeExists(int empId) {
-        boolean exits = false;
-        try {
-            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `employee` WHERE `employee_id` = ?");
-            stmt.setInt(1, empId);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                exits = true;
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return exits;
-    }
+    
+//------------------------------------------------------------------------------    
+//                              Show
+//------------------------------------------------------------------------------
 //Check if the show exits (using show-id), returns a boolean to the caller
-
     private boolean checkShowExists(int showId) {
         boolean exits = false;
         try {
@@ -138,7 +144,21 @@ public class dashBoard_gui extends javax.swing.JFrame {
     public dashBoard_gui() {
         initComponents();
     }
-
+//------------------------------------------------------------------------------    
+//                              Seat
+//------------------------------------------------------------------------------
+    
+    
+    
+//------------------------------------------------------------------------------    
+//                              Payment
+//------------------------------------------------------------------------------ 
+    
+    
+    
+//------------------------------------------------------------------------------    
+//                              Dashboard constructors
+//------------------------------------------------------------------------------
 //Access control (Depending on user-role)
     public dashBoard_gui(int loginType, int employeeId, String uname, int userTypeId) {
         initComponents();
@@ -1682,7 +1702,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Please enter a User ID!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
             //Check if the user exists
-            if (!chechEmployeeExists(Integer.parseInt(tf_emp_id.getText()))) {
+            if (!checkEmployeeExists(Integer.parseInt(tf_emp_id.getText()))) {
                 //Check if all fields are filled - Validations, Except the DOB
                 if (tf_emp_fname.getText().isEmpty() || tf_emp_lname.getText().isEmpty() || tf_emp_telno.getText().isEmpty() || tf_emp_address.getText().isEmpty()) {
                     JOptionPane.showMessageDialog(this, "All fields except DOB are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
@@ -1732,7 +1752,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Please enter/select a User ID!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
             //Check if the user exists
-            if (chechEmployeeExists(Integer.parseInt(tf_emp_id.getText()))) {
+            if (checkEmployeeExists(Integer.parseInt(tf_emp_id.getText()))) {
                 //Check if all fields are filled - Validations, Except the DOB
                 if (tf_emp_fname.getText().isEmpty() || tf_emp_lname.getText().isEmpty() || tf_emp_telno.getText().isEmpty() || tf_emp_address.getText().isEmpty()) {
                     JOptionPane.showMessageDialog(this, "All fields except DOB are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
@@ -1775,7 +1795,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Please enter/select a User ID!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
             //Check if the user exists
-            if (chechEmployeeExists(Integer.parseInt(tf_emp_id.getText()))) {
+            if (checkEmployeeExists(Integer.parseInt(tf_emp_id.getText()))) {
 
             } else {
                 JOptionPane.showMessageDialog(this, "User doesnot exists!", "Warning", JOptionPane.WARNING_MESSAGE);
