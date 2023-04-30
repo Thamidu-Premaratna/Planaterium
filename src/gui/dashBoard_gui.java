@@ -15,15 +15,26 @@ import model.DbConnect;
 
 public class dashBoard_gui extends javax.swing.JFrame {
 
-//Private global variables
-    private int userRoleId;
-    private int employeeId;
+//------------------------------------------------------------------------------    
+//                              Global variables (instance)
+//------------------------------------------------------------------------------ 
+    private int currentUserRoleId;
+    private int currentEmployeeId;
 
-//Method to get the sql.Date from a util.Date    
+//------------------------------------------------------------------------------    
+//                              Common methods
+//------------------------------------------------------------------------------ 
+//Method to get the sql.Date from a JDateChooser    
     private java.sql.Date getSQLDate(JDateChooser chooser) {
         java.util.Date utilDate = chooser.getDate();
         java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
         return sqlDate;
+    }
+
+// Method to convert java.util.Date to java.time.LocalDate
+    public java.time.LocalDate convertToLocalDate(java.util.Date dateToConvert) {
+        return java.time.LocalDate.ofInstant(
+                dateToConvert.toInstant(), java.time.ZoneId.systemDefault());
     }
 
 //------------------------------------------------------------------------------    
@@ -40,6 +51,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
             if (rs.next()) {
                 exits = true;
             }
+
             DbConnect.closeConnection();
         } catch (Exception e) {
             e.printStackTrace();
@@ -62,7 +74,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
 //Load the Employee table dynamically by retrieving them from the database
     private void loadEmployeeTable() {
         try {
-            ResultSet rs = DbConnect.createConnection().prepareStatement("SELECT * FROM `employee` INNER JOIN `role` ON `employee`.`role_id` = `role`.`id`").executeQuery();
+            ResultSet rs = DbConnect.createConnection().prepareStatement("SELECT * FROM `employee` INNER JOIN `role` ON `employee`.`role_id` = `role`.`id` INNER JOIN `status` ON `employee`.`status_id` = `status`.`id`").executeQuery();
             DefaultTableModel dtm = (DefaultTableModel) table_emp.getModel();
             dtm.setRowCount(0);
             while (rs.next()) {
@@ -75,8 +87,10 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 v.add(rs.getString("mobile"));
                 v.add(rs.getString("address"));
                 v.add(rs.getString("role.type"));
+                v.add(rs.getString("status.name"));
                 dtm.addRow(v);
             }
+
             DbConnect.closeConnection();
         } catch (Exception e) {
             e.printStackTrace();
@@ -98,6 +112,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
             }
             DefaultComboBoxModel dcbm = new DefaultComboBoxModel(v1);
             cb_emp_role.setModel(dcbm);
+
             DbConnect.closeConnection();
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -120,43 +135,54 @@ public class dashBoard_gui extends javax.swing.JFrame {
     }
 
 //Insert funtion for employee data
-    private void insertEmployeeData(String fname, String lname, java.sql.Date dob, String mobile, String address, int roleId) {
+    private int insertEmployeeData(String fname, String lname, JDateChooser dob, String mobile, String address, int roleId) {
+        int rowCount = 0;
         try {
             PreparedStatement stmt = DbConnect.createConnection().prepareStatement("INSERT INTO `employee`(fname,lname,dob,mobile,address,role_id,status_id) VALUES(?,?,?,?,?,?,?)");
             stmt.setString(1, fname);
             stmt.setString(2, lname);
-            stmt.setDate(3, dob);
+            stmt.setDate(3, getSQLDate(dob));
             stmt.setString(4, mobile);
             stmt.setString(5, address);
             stmt.setInt(6, roleId);
             stmt.setInt(7, 1); // Status is by default 'Active' for new Employees
-            stmt.executeUpdate();
+            rowCount = stmt.executeUpdate();
 
             DbConnect.closeConnection();
         } catch (java.sql.SQLException e) {
             e.printStackTrace();
         }
+
+        return rowCount;
     }
 
 //Update function for employee data (Except status change, There is a seperate function below for that)
-    private void updateEmployeeData(String fname, String lname, java.sql.Date dob, String mobile, String address, int roleId, int employeeId) {
+    private int updateEmployeeData(String fname, String lname, JDateChooser dob, String mobile, String address, int roleId, int employeeId) {
+        int rowCount = 0;
         try {
-            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("UPDATE `employee` SET `fname`= ?,`lname`= ?,`dob`= ?,`mobile`= ?,`address`= ?,`role`= ? WHERE `employee_id`= ?");
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("UPDATE `employee` SET `fname`= ?,`lname`= ?,`dob`= ?,`mobile`= ?,`address`= ?,`role_id`= ? WHERE `employee_id`= ?");
             stmt.setString(1, fname);
             stmt.setString(2, lname);
-            stmt.setDate(3, dob);
+            stmt.setDate(3, getSQLDate(dob));
             stmt.setString(4, mobile);
             stmt.setString(5, address);
             stmt.setInt(6, roleId);
             stmt.setInt(7, employeeId);
-            stmt.executeUpdate();
+
+            //Stores the amount of rows inserted after successful query exceution
+            rowCount = stmt.executeUpdate();
+
+            DbConnect.closeConnection();
         } catch (java.sql.SQLException e) {
             e.printStackTrace();
         }
+
+        return rowCount;
     }
-    
+
 //Toggle user status function for empoyee data
-    private void toggleEmployeeStatus(int employeeId) { // This only sets the employee `status` to 'Inactive' (Employee data will not be deleted)
+    private int toggleEmployeeStatus(int employeeId) { // This only sets the employee `status` to 'Inactive' (Employee data will not be deleted)
+        int rowCount = 0;
         try {
             //Finding the current user status  
             PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `employee` WHERE `employee_id` = ?");
@@ -170,12 +196,17 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 }
                 PreparedStatement stmt2 = DbConnect.createConnection().prepareStatement(query);
                 stmt2.setInt(1, employeeId);
+
+                //Stores the amount of rows updated/affected after successful query exceution
+                rowCount = stmt2.executeUpdate();
             }
-            
+
             DbConnect.closeConnection();
         } catch (java.sql.SQLException e) {
             e.printStackTrace();
         }
+
+        return rowCount;
     }
 
 //------------------------------------------------------------------------------    
@@ -238,16 +269,18 @@ public class dashBoard_gui extends javax.swing.JFrame {
     }
 
 //Access control (Depending on user-role)
-    public dashBoard_gui(int loginType, int employeeId, String uname, int userTypeId) {
+    public dashBoard_gui(int loginType, int currentEmployeeId, String uname, int currentUserRoleId) {
         initComponents();
 
         //Loading things common to all access levels
         loadShowTable();
         //Set values to the private variables in this instance of the dashboard (session)
-        this.employeeId = employeeId;
-        this.userRoleId = userTypeId;
+        this.currentEmployeeId = currentEmployeeId;
+        this.currentUserRoleId = currentUserRoleId;
 
         label_uname.setText(uname);
+        tf_emp_id.setEnabled(false);
+
         switch (loginType) {
             case 1 -> { // Receptionist logged in, initializations
                 btn_payment.setEnabled(false);
@@ -382,7 +415,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         btn_emp_add = new javax.swing.JButton();
         btn_emp_update = new javax.swing.JButton();
         btn_emp_clear = new javax.swing.JButton();
-        btn_emp_delete = new javax.swing.JButton();
+        btn_emp_status = new javax.swing.JButton();
         cb_emp_role = new javax.swing.JComboBox<>();
         dc_emp_dob = new com.toedter.calendar.JDateChooser();
         jPanel15 = new javax.swing.JPanel();
@@ -1196,11 +1229,11 @@ public class dashBoard_gui extends javax.swing.JFrame {
             }
         });
 
-        btn_emp_delete.setBackground(new java.awt.Color(0, 153, 153));
-        btn_emp_delete.setText("Toggle Status");
-        btn_emp_delete.addActionListener(new java.awt.event.ActionListener() {
+        btn_emp_status.setBackground(new java.awt.Color(0, 153, 153));
+        btn_emp_status.setText("Toggle Status");
+        btn_emp_status.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_emp_deleteActionPerformed(evt);
+                btn_emp_statusActionPerformed(evt);
             }
         });
 
@@ -1223,7 +1256,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                                     .addGroup(jPanel17Layout.createSequentialGroup()
                                         .addComponent(btn_emp_update, javax.swing.GroupLayout.PREFERRED_SIZE, 84, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addComponent(btn_emp_delete))
+                                        .addComponent(btn_emp_status))
                                     .addGroup(jPanel17Layout.createSequentialGroup()
                                         .addComponent(btn_emp_clear, javax.swing.GroupLayout.PREFERRED_SIZE, 84, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addGap(0, 0, Short.MAX_VALUE))))
@@ -1298,7 +1331,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btn_emp_add)
                     .addComponent(btn_emp_update)
-                    .addComponent(btn_emp_delete))
+                    .addComponent(btn_emp_status))
                 .addGap(30, 30, 30)
                 .addComponent(btn_emp_clear)
                 .addContainerGap(58, Short.MAX_VALUE))
@@ -1777,45 +1810,29 @@ public class dashBoard_gui extends javax.swing.JFrame {
     }//GEN-LAST:event_table_empMouseClicked
 
     private void btn_emp_addActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_addActionPerformed
-        //Check if the user already exists
-        if (tf_emp_id.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter a User ID!", "Warning", JOptionPane.WARNING_MESSAGE);
+        //EmployeeId is auto matically generated!
+        //Check if all fields are filled - Validations, Except the DOB
+        if (tf_emp_fname.getText().isEmpty() || tf_emp_lname.getText().isEmpty() || tf_emp_telno.getText().isEmpty() || tf_emp_address.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "All fields except DOB are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (cb_emp_role.getSelectedItem().toString().equals("Select")) {
+            JOptionPane.showMessageDialog(this, "Please select a role!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (cb_emp_role.getSelectedItem().toString().equals("Admin")) {
+            JOptionPane.showMessageDialog(this, "Admin roles cannot be assigned!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
-            //Check if the user exists
-            if (!checkEmployeeExists(Integer.parseInt(tf_emp_id.getText()))) {
-                //Check if all fields are filled - Validations, Except the DOB
-                if (tf_emp_fname.getText().isEmpty() || tf_emp_lname.getText().isEmpty() || tf_emp_telno.getText().isEmpty() || tf_emp_address.getText().isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "All fields except DOB are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
-                } else if (cb_emp_role.getSelectedItem().toString().equals("Select")) {
-                    JOptionPane.showMessageDialog(this, "Please select a role!", "Warning", JOptionPane.WARNING_MESSAGE);
-                } else if (cb_emp_role.getSelectedItem().toString().equals("Admin")) {
-                    JOptionPane.showMessageDialog(this, "Admin roles cannot be assigned!", "Warning", JOptionPane.WARNING_MESSAGE);
-                } else {
-                    try {
-                        PreparedStatement stmt = DbConnect.createConnection().prepareStatement("INSERT INTO `employee`(employee_id,fname,lname,dob,mobile,address,role_id) VALUES(?,?,?,?,?,?,?)");
-                        stmt.setInt(1, Integer.parseInt(tf_emp_id.getText()));
-                        stmt.setString(2, tf_emp_fname.getText());
-                        stmt.setString(3, tf_emp_lname.getText());
-                        stmt.setDate(4, getSQLDate(dc_emp_dob));
-                        stmt.setString(5, tf_emp_telno.getText());
-                        stmt.setString(6, tf_emp_address.getText());
-                        stmt.setInt(7, cb_emp_role.getSelectedIndex());
-                        stmt.executeUpdate();
-                        DbConnect.closeConnection();
-                        JOptionPane.showMessageDialog(this, "Employee details entered!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            //Inserting the data using user-defined method
+            int rowCount = insertEmployeeData(tf_emp_fname.getText(), tf_emp_lname.getText(), dc_emp_dob, tf_emp_telno.getText(), tf_emp_address.getText(), cb_emp_role.getSelectedIndex());
 
-                        //Clear all fields
-                        clearEmployeeFields();
-                        //Refresh Table after update
-                        loadEmployeeTable();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+            if (rowCount > 0) { // Insert successful (rows affected)
+                JOptionPane.showMessageDialog(this, "Employee details entered!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "User (id) already exists!", "Warning", JOptionPane.WARNING_MESSAGE);
+                //Clear all fields
+                clearEmployeeFields();
+                //Refresh Table after update
+                loadEmployeeTable();
+            } else { // Insert was unsuccessful
+                JOptionPane.showMessageDialog(this, "Eror occured while inserting data!", "Warning", JOptionPane.WARNING_MESSAGE);
             }
+
         }
 
     }//GEN-LAST:event_btn_emp_addActionPerformed
@@ -1839,25 +1856,20 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 } else if (cb_emp_role.getSelectedItem().toString().equals("Select")) {
                     JOptionPane.showMessageDialog(this, "Please select a role!", "Warning", JOptionPane.WARNING_MESSAGE);
                 } else {
-                    try {
-                        PreparedStatement stmt = DbConnect.createConnection().prepareStatement("UPDATE `employee` SET `fname`= ?,`lname`= ?,`dob`= ?,`mobile`= ?,`address`= ?,`role`= ? WHERE `employee_id`= ?");
-                        stmt.setInt(7, Integer.parseInt(tf_emp_id.getText()));
-                        stmt.setString(1, tf_emp_fname.getText());
-                        stmt.setString(2, tf_emp_lname.getText());
-                        stmt.setDate(3, getSQLDate(dc_emp_dob));
-                        stmt.setString(4, tf_emp_telno.getText());
-                        stmt.setString(5, tf_emp_address.getText());
-                        stmt.setInt(6, cb_emp_role.getSelectedIndex());
-                        stmt.executeUpdate();
-                        DbConnect.closeConnection();
-                        JOptionPane.showMessageDialog(this, "Employee details updated!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                    //Updating the data using user-defined method
+                    int rowCount = updateEmployeeData(tf_emp_fname.getText(), tf_emp_lname.getText(), dc_emp_dob, tf_emp_telno.getText(), tf_emp_address.getText(), cb_emp_role.getSelectedIndex(), Integer.parseInt(tf_emp_id.getText()));
+
+                    if (rowCount > 0) { // Update successful (rows affected)
+                        JOptionPane.showMessageDialog(this, "Employee details updated!" + rowCount, "Success", JOptionPane.INFORMATION_MESSAGE);
 
                         //Clear all fields
                         clearEmployeeFields();
                         //Refresh Table after update
                         loadEmployeeTable();
-                    } catch (Exception e) {
-                        e.printStackTrace();
+
+                    } else { // Update was unsuccessful
+                        JOptionPane.showMessageDialog(this, "Eror occured while updating data!", "Warning", JOptionPane.WARNING_MESSAGE);
                     }
 
                 }
@@ -1869,19 +1881,27 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
     }//GEN-LAST:event_btn_emp_updateActionPerformed
 
-    private void btn_emp_deleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_deleteActionPerformed
+    private void btn_emp_statusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_statusActionPerformed
         //Check if the user already exists
         if (tf_emp_id.getText().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter/select a User ID!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
             //Check if the user exists
             if (checkEmployeeExists(Integer.parseInt(tf_emp_id.getText()))) {
+                int rowCount = toggleEmployeeStatus(Integer.parseInt(tf_emp_id.getText()));
+                if (rowCount > 0) { // Employee status update successful (rows are affected)
+                    JOptionPane.showMessageDialog(this, "Employee status updated!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
+                    //Refresh Table after update
+                    loadEmployeeTable();
+                } else { // Employee status update unsuccessful
+                    JOptionPane.showMessageDialog(this, "Eror occured while updating employee status!", "Warning", JOptionPane.WARNING_MESSAGE);
+                }
             } else {
                 JOptionPane.showMessageDialog(this, "User doesnot exists!", "Warning", JOptionPane.WARNING_MESSAGE);
             }
         }
-    }//GEN-LAST:event_btn_emp_deleteActionPerformed
+    }//GEN-LAST:event_btn_emp_statusActionPerformed
 
     private void btn_show_insertActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_insertActionPerformed
         //
@@ -1911,7 +1931,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JButton btn_editscreen;
     private javax.swing.JButton btn_emp_add;
     private javax.swing.JButton btn_emp_clear;
-    private javax.swing.JButton btn_emp_delete;
+    private javax.swing.JButton btn_emp_status;
     private javax.swing.JButton btn_emp_update;
     private javax.swing.JButton btn_employee;
     private javax.swing.JButton btn_logout;

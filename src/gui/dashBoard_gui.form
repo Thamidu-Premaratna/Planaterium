@@ -1649,7 +1649,7 @@
                                                   <Group type="102" attributes="0">
                                                       <Component id="btn_emp_update" min="-2" pref="84" max="-2" attributes="0"/>
                                                       <EmptySpace max="32767" attributes="0"/>
-                                                      <Component id="btn_emp_delete" min="-2" max="-2" attributes="0"/>
+                                                      <Component id="btn_emp_status" min="-2" max="-2" attributes="0"/>
                                                   </Group>
                                                   <Group type="102" attributes="0">
                                                       <Component id="btn_emp_clear" min="-2" pref="84" max="-2" attributes="0"/>
@@ -1749,7 +1749,7 @@
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="btn_emp_add" alignment="3" min="-2" max="-2" attributes="0"/>
                                   <Component id="btn_emp_update" alignment="3" min="-2" max="-2" attributes="0"/>
-                                  <Component id="btn_emp_delete" alignment="3" min="-2" max="-2" attributes="0"/>
+                                  <Component id="btn_emp_status" alignment="3" min="-2" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace min="-2" pref="30" max="-2" attributes="0"/>
                               <Component id="btn_emp_clear" min="-2" max="-2" attributes="0"/>
@@ -1867,7 +1867,7 @@
                         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_emp_clearActionPerformed"/>
                       </Events>
                     </Component>
-                    <Component class="javax.swing.JButton" name="btn_emp_delete">
+                    <Component class="javax.swing.JButton" name="btn_emp_status">
                       <Properties>
                         <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
                           <Color blue="99" green="99" red="0" type="rgb"/>
@@ -1875,7 +1875,7 @@
                         <Property name="text" type="java.lang.String" value="Toggle Status"/>
                       </Properties>
                       <Events>
-                        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_emp_deleteActionPerformed"/>
+                        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_emp_statusActionPerformed"/>
                       </Events>
                     </Component>
                     <Component class="javax.swing.JComboBox" name="cb_emp_role">
