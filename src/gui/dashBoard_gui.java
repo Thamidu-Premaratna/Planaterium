@@ -1160,6 +1160,9 @@ public class dashBoard_gui extends javax.swing.JFrame {
             }
         });
         jScrollPane3.setViewportView(table_emp);
+        if (table_emp.getColumnModel().getColumnCount() > 0) {
+            table_emp.getColumnModel().getColumn(0).setPreferredWidth(3);
+        }
 
         javax.swing.GroupLayout jPanel16Layout = new javax.swing.GroupLayout(jPanel16);
         jPanel16.setLayout(jPanel16Layout);
@@ -1855,13 +1858,15 @@ public class dashBoard_gui extends javax.swing.JFrame {
                     JOptionPane.showMessageDialog(this, "All fields except DOB are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
                 } else if (cb_emp_role.getSelectedItem().toString().equals("Select")) {
                     JOptionPane.showMessageDialog(this, "Please select a role!", "Warning", JOptionPane.WARNING_MESSAGE);
+                } else if (cb_emp_role.getSelectedItem().toString().equals("Admin") && currentUserRoleId != 1) { //User currently logged in should be an Admin (roleId = 1)
+                    JOptionPane.showMessageDialog(this, "Only Admins can set Admin roles!", "Warning", JOptionPane.WARNING_MESSAGE);
                 } else {
 
                     //Updating the data using user-defined method
                     int rowCount = updateEmployeeData(tf_emp_fname.getText(), tf_emp_lname.getText(), dc_emp_dob, tf_emp_telno.getText(), tf_emp_address.getText(), cb_emp_role.getSelectedIndex(), Integer.parseInt(tf_emp_id.getText()));
 
                     if (rowCount > 0) { // Update successful (rows affected)
-                        JOptionPane.showMessageDialog(this, "Employee details updated!" + rowCount, "Success", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Employee details updated!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
                         //Clear all fields
                         clearEmployeeFields();
