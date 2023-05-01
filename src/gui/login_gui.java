@@ -34,6 +34,7 @@ public class login_gui extends javax.swing.JFrame {
 //------------------------------------------------------------------------------    
 //                              Login constructor
 //------------------------------------------------------------------------------
+
     public login_gui() {
         initComponents();
         btn_login.requestFocus();
@@ -256,12 +257,14 @@ public class login_gui extends javax.swing.JFrame {
     }//GEN-LAST:event_btn_loginActionPerformed
 
     private void tf_unameFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_unameFocusGained
-        tf_uname.setText("");
+        if (tf_uname.getText().equals("Enter Username")) {
+            tf_uname.setText("");
+        }
         tf_uname.setForeground(Color.black);
     }//GEN-LAST:event_tf_unameFocusGained
 
     private void tf_unameFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_unameFocusLost
-        if (tf_uname.getText().isBlank() || tf_uname.getText().equals("Enter Username")) {
+        if (tf_uname.getText().isBlank()) {
             tf_uname.setText("Enter Username");
             tf_uname.setForeground(new Color(102, 102, 102));
         } else {

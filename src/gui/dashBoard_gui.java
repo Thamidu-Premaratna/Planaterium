@@ -2,15 +2,19 @@ package gui;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import com.toedter.calendar.JDateChooser;
+import java.awt.Color;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Vector;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
+import lu.tudor.santec.jtimechooser.JTimeChooser;
 import model.DbConnect;
 
 public class dashBoard_gui extends javax.swing.JFrame {
@@ -30,8 +34,18 @@ public class dashBoard_gui extends javax.swing.JFrame {
         java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
         return sqlDate;
     }
+//Method to get the sql.Time from a TimeChooser    
 
+    private java.sql.Time getSQLTime(JTimeChooser chooser) {
+        int hour = chooser.getHours();
+        int min = chooser.getMinutes();
+        int sec = chooser.getSeconds();
+
+        java.sql.Time sqlTime = new Time(hour, min, sec);
+        return sqlTime;
+    }
 // Method to convert java.util.Date to java.time.LocalDate
+
     public java.time.LocalDate convertToLocalDate(java.util.Date dateToConvert) {
         return java.time.LocalDate.ofInstant(
                 dateToConvert.toInstant(), java.time.ZoneId.systemDefault());
@@ -146,6 +160,8 @@ public class dashBoard_gui extends javax.swing.JFrame {
             stmt.setString(5, address);
             stmt.setInt(6, roleId);
             stmt.setInt(7, 1); // Status is by default 'Active' for new Employees
+
+            //Stores the amount of rows inserted after successful query exceution
             rowCount = stmt.executeUpdate();
 
             DbConnect.closeConnection();
@@ -230,8 +246,22 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         return exits;
     }
-//Load the Employee table dynamically by retrieving them from the database
 
+//Clear fields
+    private void clearShowFields() {
+        tf_show_id.setText("");
+        tf_show_name.setText("");
+        try {
+            tc_show_starttime.setTime(new SimpleDateFormat("hh:mm:ss").parse("00:00:00"));
+            tc_show_endtime.setTime(new SimpleDateFormat("hh:mm:ss").parse("00:00:00"));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        dc_show_date.setDate(null);
+
+    }
+
+//Load the Employee table dynamically by retrieving them from the database
     private void loadShowTable() {
         try {
             ResultSet rs = DbConnect.createConnection().prepareStatement("SELECT * FROM `show`").executeQuery();
@@ -254,7 +284,100 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
 
     }
+//Load the Employee table dynamically according to a 'search criteria' by retrieving them from the database
 
+    private void loadShowTable(String searchTerm) {
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `show` WHERE `show_id` LIKE ? OR `show_name` LIKE ?");
+            stmt.setString(1, searchTerm + "%");
+            stmt.setString(2, searchTerm + "%");
+            ResultSet rs = stmt.executeQuery();
+            DefaultTableModel dtm = (DefaultTableModel) table_show.getModel();
+            dtm.setRowCount(0);
+            while (rs.next()) {
+                //Create new vector for each record of the table
+                Vector v = new Vector();
+                v.add(rs.getString("show_id"));
+                v.add(rs.getString("show_name"));
+                v.add(rs.getString("start_time"));
+                v.add(rs.getString("end_time"));
+                v.add(rs.getString("show_date"));
+                v.add(rs.getString("employee_id"));
+                dtm.addRow(v);
+            }
+            DbConnect.closeConnection();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+//Insert function for show data
+    private int insertShowData(String showName, JTimeChooser startTime, JTimeChooser endTime, JDateChooser showDate, String showImg) {
+        int rowCount = 0;
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("INSERT INTO `show`(show_name,start_time,end_time,show_date,show_img,employee_id) VALUES(?,?,?,?,?,?)");
+            stmt.setString(1, showName);
+            stmt.setTime(2, getSQLTime(startTime));
+            stmt.setTime(3, getSQLTime(endTime));
+            stmt.setDate(4, getSQLDate(showDate));
+            stmt.setString(5, showImg);
+            stmt.setInt(6, currentEmployeeId);
+
+            //Stores the amount of rows inserted after successful query exceution
+            rowCount = stmt.executeUpdate();
+
+            DbConnect.closeConnection();
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
+
+        return rowCount;
+    }
+
+//Update function for show data
+    private int updateShowData(String showName, JTimeChooser startTime, JTimeChooser endTime, JDateChooser showDate, String showImg, int showId) {
+        int rowCount = 0;
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("UPDATE `show` SET `show_name`=?,`start_time`=?,`end_time`=?,`show_date`=?,`show_img`=? WHERE `show_id`=?");
+            stmt.setString(1, showName);
+            stmt.setTime(2, getSQLTime(startTime));
+            stmt.setTime(3, getSQLTime(endTime));
+            stmt.setDate(4, getSQLDate(showDate));
+            stmt.setString(5, showImg);
+            stmt.setInt(6, showId);
+
+            //Stores the amount of rows inserted after successful query exceution
+            rowCount = stmt.executeUpdate();
+
+            DbConnect.closeConnection();
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
+
+        return rowCount;
+    }
+
+// Delete function for show data
+    private int deleteShowData(int showId) {
+        int rowCount = 0;
+        try {
+            //Initially delete all tickets with the same showId (Foriegn Key constraint)
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("DELETE FROM `ticket` WHERE `show_id` =?");
+            stmt.setInt(1, showId);
+            rowCount = stmt.executeUpdate();
+
+            //Delete all tickets with the same showId (Foriegn Key constraint)
+            PreparedStatement stmt1 = DbConnect.createConnection().prepareStatement("DELETE FROM `show` WHERE `show_id` =?");
+            stmt1.setInt(1, showId);
+            rowCount += stmt.executeUpdate();
+
+            DbConnect.closeConnection();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return rowCount; //The ideal row count should be 2, but there could be instances where tickets with the show id will not exist then the row count will be 1
+    }
 //------------------------------------------------------------------------------    
 //                              Seat
 //------------------------------------------------------------------------------
@@ -264,6 +387,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
 //------------------------------------------------------------------------------    
 //                              Dashboard constructors
 //------------------------------------------------------------------------------
+
     public dashBoard_gui() {
         initComponents();
     }
@@ -280,6 +404,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         label_uname.setText(uname);
         tf_emp_id.setEnabled(false);
+        tf_show_id.setEditable(false);
 
         switch (loginType) {
             case 1 -> { // Receptionist logged in, initializations
@@ -359,7 +484,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jLabel29 = new javax.swing.JLabel();
         tf_show_id = new javax.swing.JTextField();
         tf_show_name = new javax.swing.JTextField();
-        jDateChooser1 = new com.toedter.calendar.JDateChooser();
+        dc_show_date = new com.toedter.calendar.JDateChooser();
         tc_show_endtime = new lu.tudor.santec.jtimechooser.JTimeChooser();
         tc_show_starttime = new lu.tudor.santec.jtimechooser.JTimeChooser();
         jPanel10 = new javax.swing.JPanel();
@@ -741,6 +866,11 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         btn_show_clear.setBackground(new java.awt.Color(0, 153, 153));
         btn_show_clear.setText("Clear");
+        btn_show_clear.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_show_clearActionPerformed(evt);
+            }
+        });
 
         jLabel25.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel25.setText("Show Name");
@@ -775,7 +905,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                         .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(tf_show_id)
                             .addComponent(tf_show_name)
-                            .addComponent(jDateChooser1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(dc_show_date, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(tc_show_endtime, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(tc_show_starttime, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                     .addGroup(jPanel7Layout.createSequentialGroup()
@@ -822,7 +952,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addGap(36, 36, 36)
                 .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jLabel29, javax.swing.GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE)
-                    .addComponent(jDateChooser1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(dc_show_date, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 56, Short.MAX_VALUE)
                 .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btn_show_insert)
@@ -832,12 +962,14 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addGap(51, 51, 51))
         );
 
+        jPanel10.setBackground(new java.awt.Color(255, 255, 255));
+
         table_show.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
 
             },
             new String [] {
-                "Show ID", "Show Name", "Starting Time", "Ending Time", "Show date", "Employee ID"
+                "Show ID", "Show Name", "Starting Time", "Ending Time", "Show date", "Emp-ID"
             }
         ) {
             boolean[] canEdit = new boolean [] {
@@ -848,9 +980,32 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
+        table_show.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                table_showMouseClicked(evt);
+            }
+        });
         jScrollPane1.setViewportView(table_show);
+        if (table_show.getColumnModel().getColumnCount() > 0) {
+            table_show.getColumnModel().getColumn(0).setPreferredWidth(3);
+            table_show.getColumnModel().getColumn(5).setPreferredWidth(3);
+        }
 
+        tf_show_search.setForeground(new java.awt.Color(102, 102, 102));
         tf_show_search.setText("Search");
+        tf_show_search.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                tf_show_searchFocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                tf_show_searchFocusLost(evt);
+            }
+        });
+        tf_show_search.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                tf_show_searchKeyReleased(evt);
+            }
+        });
 
         jLabel30.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/icons8-search-23.png"))); // NOI18N
 
@@ -860,13 +1015,12 @@ public class dashBoard_gui extends javax.swing.JFrame {
             jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel10Layout.createSequentialGroup()
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 917, Short.MAX_VALUE)
                     .addGroup(jPanel10Layout.createSequentialGroup()
                         .addComponent(jLabel30)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(tf_show_search, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addContainerGap())
+                        .addComponent(tf_show_search, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 903, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(20, Short.MAX_VALUE))
         );
         jPanel10Layout.setVerticalGroup(
             jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -875,9 +1029,9 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(tf_show_search)
                     .addComponent(jLabel30, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 26, Short.MAX_VALUE)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 620, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(26, Short.MAX_VALUE))
+                .addGap(18, 18, 18))
         );
 
         javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
@@ -1705,11 +1859,61 @@ public class dashBoard_gui extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton10ActionPerformed
 
     private void btn_show_updateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_updateActionPerformed
-        // TODO add your handling code here:
+        //Check if the show already exists
+        if (tf_show_id.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please select a show!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else {
+            //Check if the show exists
+            if (checkShowExists(Integer.parseInt(tf_show_id.getText()))) {
+                //The employee_id will not be allowed to be changed!
+                if (tf_show_name.getText().isEmpty() || tc_show_starttime == null || tc_show_endtime == null || dc_show_date == null) {
+                    JOptionPane.showMessageDialog(this, "All fields are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
+                } else {
+                    //Inserting the data using user-defined method
+                    String showImg = "";
+                    int rowCount = updateShowData(tf_show_name.getText(), tc_show_starttime, tc_show_endtime, dc_show_date, showImg, Integer.parseInt(tf_show_id.getText()));
+
+                    if (rowCount > 0) { // Update successful (rows affected)
+                        JOptionPane.showMessageDialog(this, "Show details update!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                        //Clear all fields
+                        clearShowFields();
+                        //Refresh Table after update
+                        loadShowTable();
+                    } else { // update was unsuccessful
+                        JOptionPane.showMessageDialog(this, "Eror occured while updating data!", "Warning", JOptionPane.WARNING_MESSAGE);
+                    }
+
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Show doesnot exists!", "Warning", JOptionPane.WARNING_MESSAGE);
+            }
+        }
     }//GEN-LAST:event_btn_show_updateActionPerformed
 
     private void btn_show_deleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_deleteActionPerformed
-        // TODO add your handling code here:
+        //Check if the show already exists
+        if (tf_show_id.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please select a show!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else {
+            //Check if the show exists
+            String showId = tf_show_id.getText();
+            if (checkShowExists(Integer.parseInt(showId))) {
+                int rowCount = deleteShowData(Integer.parseInt(showId));
+                if (rowCount >= 1) { // 2 queries will be executed.
+                    JOptionPane.showMessageDialog(this, "Show with id:" + showId + " deleted!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                    //Clear all fields
+                    clearShowFields();
+                    //Refresh Table after update
+                    loadShowTable();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Eror occured while deleting data!", "Warning", JOptionPane.WARNING_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Show doesnot exists!", "Warning", JOptionPane.WARNING_MESSAGE);
+            }
+        }
     }//GEN-LAST:event_btn_show_deleteActionPerformed
 
     private void jTextField7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField7ActionPerformed
@@ -1849,7 +2053,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private void btn_emp_updateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_updateActionPerformed
         //Check if the user already exists
         if (tf_emp_id.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter/select a User ID!", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select a User!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
             //Check if the user exists
             if (checkEmployeeExists(Integer.parseInt(tf_emp_id.getText()))) {
@@ -1909,13 +2113,91 @@ public class dashBoard_gui extends javax.swing.JFrame {
     }//GEN-LAST:event_btn_emp_statusActionPerformed
 
     private void btn_show_insertActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_insertActionPerformed
-        //
+        //ShowId is automatically generated!
+        //Check if all fields are filled - Validations
+        if (tf_show_name.getText().isEmpty() || tc_show_starttime == null || tc_show_endtime == null || dc_show_date == null) {
+            JOptionPane.showMessageDialog(this, "All fields are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else {
+            //Inserting the data using user-defined method
+            String showImg = "";
+            int rowCount = insertShowData(tf_show_name.getText(), tc_show_starttime, tc_show_endtime, dc_show_date, showImg);
+
+            if (rowCount > 0) { // Insert successful (rows affected)
+                JOptionPane.showMessageDialog(this, "Show details entered!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                //Clear all fields
+                clearShowFields();
+                //Refresh Table after update
+                loadShowTable();
+            } else { // Insert was unsuccessful
+                JOptionPane.showMessageDialog(this, "Eror occured while inserting data!", "Warning", JOptionPane.WARNING_MESSAGE);
+            }
+
+        }
 
     }//GEN-LAST:event_btn_show_insertActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
+    private void btn_show_clearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_clearActionPerformed
+        clearShowFields();
+        loadShowTable();
+    }//GEN-LAST:event_btn_show_clearActionPerformed
+
+    private void table_showMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_table_showMouseClicked
+        if (evt.getClickCount() == 2) {
+            int r = table_show.getSelectedRow();
+            if (r != -1) {
+                tf_show_id.setText(table_show.getValueAt(r, 0).toString());
+                tf_show_name.setText(table_show.getValueAt(r, 1).toString());
+                try {
+                    tc_show_starttime.setTime(new SimpleDateFormat("hh:mm:ss").parse((String) table_show.getValueAt(r, 2)));
+                    tc_show_endtime.setTime(new SimpleDateFormat("hh:mm:ss").parse((String) table_show.getValueAt(r, 3)));
+                    dc_show_date.setDate(new SimpleDateFormat("yyyy-MM-dd").parse((String) table_show.getValueAt(r, 4)));
+                } catch (ParseException ex) {
+                    ex.printStackTrace();
+                }
+                /*
+                String imgpath = "";
+                try {
+                    PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `show` WHERE `show_id` = ?");
+                    stmt.setInt(1, Integer.parseInt(table_show.getValueAt(r, 0).toString()));
+                    ResultSet rs = stmt.executeQuery();
+                    imgpath = rs.getString("show_img");
+                } catch (java.sql.SQLException e) {
+                    e.printStackTrace();
+                }
+                label_show_image.setIcon(new javax.swing.ImageIcon(getClass().getResource(imgpath)));
+                 */
+            }
+        }
+    }//GEN-LAST:event_table_showMouseClicked
+
+    private void tf_show_searchKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tf_show_searchKeyReleased
+        //Checking if the search field is empty or not, and invoking the respective methods to fill the table
+        if (!tf_show_search.getText().isEmpty() || !tf_show_search.getText().equals("Search")) {
+            loadShowTable(tf_show_search.getText());
+        } else {
+            loadShowTable();
+        }
+
+
+    }//GEN-LAST:event_tf_show_searchKeyReleased
+
+    private void tf_show_searchFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_show_searchFocusGained
+        if (tf_show_search.getText().equals("Search")) {
+            tf_show_search.setText("");
+        }
+        tf_show_search.setForeground(Color.black);
+    }//GEN-LAST:event_tf_show_searchFocusGained
+
+    private void tf_show_searchFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_show_searchFocusLost
+        if (tf_show_search.getText().isBlank()) {
+            tf_show_search.setText("Search");
+            tf_show_search.setForeground(new Color(102, 102, 102));
+        } else {
+            tf_show_search.setForeground(Color.black);
+        }
+    }//GEN-LAST:event_tf_show_searchFocusLost
+
     public static void main(String args[]) {
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
@@ -1956,6 +2238,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> cb_seat_to;
     private javax.swing.JComboBox<String> cb_seat_type;
     private com.toedter.calendar.JDateChooser dc_emp_dob;
+    private com.toedter.calendar.JDateChooser dc_show_date;
     private javax.swing.JButton jButton10;
     private javax.swing.JButton jButton15;
     private javax.swing.JButton jButton16;
@@ -1968,7 +2251,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JButton jButton8;
     private javax.swing.JButton jButton9;
     private com.toedter.calendar.JCalendar jCalendar1;
-    private com.toedter.calendar.JDateChooser jDateChooser1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel13;

@@ -762,7 +762,7 @@
                                       <Group type="103" groupAlignment="0" attributes="0">
                                           <Component id="tf_show_id" alignment="0" max="32767" attributes="0"/>
                                           <Component id="tf_show_name" alignment="0" max="32767" attributes="0"/>
-                                          <Component id="jDateChooser1" alignment="0" max="32767" attributes="0"/>
+                                          <Component id="dc_show_date" alignment="0" max="32767" attributes="0"/>
                                           <Component id="tc_show_endtime" alignment="0" max="32767" attributes="0"/>
                                           <Component id="tc_show_starttime" alignment="0" max="32767" attributes="0"/>
                                       </Group>
@@ -825,7 +825,7 @@
                               <EmptySpace min="-2" pref="36" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" max="-2" attributes="0">
                                   <Component id="jLabel29" pref="32" max="32767" attributes="0"/>
-                                  <Component id="jDateChooser1" max="32767" attributes="0"/>
+                                  <Component id="dc_show_date" max="32767" attributes="0"/>
                               </Group>
                               <EmptySpace pref="56" max="32767" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
@@ -899,6 +899,9 @@
                         </Property>
                         <Property name="text" type="java.lang.String" value="Clear"/>
                       </Properties>
+                      <Events>
+                        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btn_show_clearActionPerformed"/>
+                      </Events>
                     </Component>
                     <Component class="javax.swing.JLabel" name="jLabel25">
                       <Properties>
@@ -944,7 +947,7 @@
                     </Component>
                     <Component class="javax.swing.JTextField" name="tf_show_name">
                     </Component>
-                    <Component class="com.toedter.calendar.JDateChooser" name="jDateChooser1">
+                    <Component class="com.toedter.calendar.JDateChooser" name="dc_show_date">
                     </Component>
                     <Component class="lu.tudor.santec.jtimechooser.JTimeChooser" name="tc_show_endtime">
                     </Component>
@@ -953,21 +956,25 @@
                   </SubComponents>
                 </Container>
                 <Container class="javax.swing.JPanel" name="jPanel10">
+                  <Properties>
+                    <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                      <Color blue="ff" green="ff" red="ff" type="rgb"/>
+                    </Property>
+                  </Properties>
 
                   <Layout>
                     <DimensionLayout dim="0">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Group type="102" alignment="0" attributes="0">
+                          <Group type="102" attributes="0">
                               <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="jScrollPane1" alignment="0" pref="917" max="32767" attributes="0"/>
                                   <Group type="102" alignment="0" attributes="0">
                                       <Component id="jLabel30" min="-2" max="-2" attributes="0"/>
                                       <EmptySpace type="unrelated" max="-2" attributes="0"/>
                                       <Component id="tf_show_search" min="-2" pref="214" max="-2" attributes="0"/>
-                                      <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                                   </Group>
+                                  <Component id="jScrollPane1" alignment="0" min="-2" pref="903" max="-2" attributes="0"/>
                               </Group>
-                              <EmptySpace max="-2" attributes="0"/>
+                              <EmptySpace pref="20" max="32767" attributes="0"/>
                           </Group>
                       </Group>
                     </DimensionLayout>
@@ -979,9 +986,9 @@
                                   <Component id="tf_show_search" alignment="0" max="32767" attributes="0"/>
                                   <Component id="jLabel30" alignment="0" max="32767" attributes="0"/>
                               </Group>
-                              <EmptySpace type="separate" max="-2" attributes="0"/>
-                              <Component id="jScrollPane1" min="-2" pref="620" max="-2" attributes="0"/>
                               <EmptySpace pref="26" max="32767" attributes="0"/>
+                              <Component id="jScrollPane1" min="-2" pref="620" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
                           </Group>
                       </Group>
                     </DimensionLayout>
@@ -1003,12 +1010,12 @@
                                 <Column editable="false" title="Starting Time" type="java.lang.Object"/>
                                 <Column editable="false" title="Ending Time" type="java.lang.Object"/>
                                 <Column editable="false" title="Show date" type="java.lang.Object"/>
-                                <Column editable="false" title="Employee ID" type="java.lang.Object"/>
+                                <Column editable="false" title="Emp-ID" type="java.lang.Object"/>
                               </Table>
                             </Property>
                             <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
                               <TableColumnModel selectionModel="0">
-                                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                                <Column maxWidth="-1" minWidth="-1" prefWidth="3" resizable="true">
                                   <Title/>
                                   <Editor/>
                                   <Renderer/>
@@ -1033,7 +1040,7 @@
                                   <Editor/>
                                   <Renderer/>
                                 </Column>
-                                <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                                <Column maxWidth="-1" minWidth="-1" prefWidth="3" resizable="true">
                                   <Title/>
                                   <Editor/>
                                   <Renderer/>
@@ -1044,13 +1051,24 @@
                               <TableHeader reorderingAllowed="true" resizingAllowed="true"/>
                             </Property>
                           </Properties>
+                          <Events>
+                            <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="table_showMouseClicked"/>
+                          </Events>
                         </Component>
                       </SubComponents>
                     </Container>
                     <Component class="javax.swing.JTextField" name="tf_show_search">
                       <Properties>
+                        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="66" green="66" red="66" type="rgb"/>
+                        </Property>
                         <Property name="text" type="java.lang.String" value="Search"/>
                       </Properties>
+                      <Events>
+                        <EventHandler event="focusGained" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="tf_show_searchFocusGained"/>
+                        <EventHandler event="focusLost" listener="java.awt.event.FocusListener" parameters="java.awt.event.FocusEvent" handler="tf_show_searchFocusLost"/>
+                        <EventHandler event="keyReleased" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="tf_show_searchKeyReleased"/>
+                      </Events>
                     </Component>
                     <Component class="javax.swing.JLabel" name="jLabel30">
                       <Properties>
