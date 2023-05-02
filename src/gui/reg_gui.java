@@ -21,23 +21,41 @@ public class reg_gui extends javax.swing.JFrame {
             Vector v1 = new Vector();
             v1.add("Select");
             while (rs.next()) {
-                //Admin roles cannot be created using this application
+                //Login info with Admin roles cannot be made (i.e Only one admin exists)
                 if (!rs.getString("type").equals("Admin")) {
                     v1.add(rs.getString("type"));
                 }
             }
             DefaultComboBoxModel dcbm = new DefaultComboBoxModel(v1);
             cb_role.setModel(dcbm);
-            DbConnect.connection.close();
-        } catch (Exception ex) {
+            DbConnect.closeConnection();
+        } catch (java.sql.SQLException ex) {
             ex.printStackTrace();
         }
     }
+    private void loadEmployees(){
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `employee` WHERE `status_id` = 1"); //The user should have a 'active' status
+            ResultSet rs = stmt.executeQuery();
 
+            //Creating a new vector to hold the values
+            Vector v1 = new Vector();
+            v1.add("Select");
+            while (rs.next()) {
+                v1.add(rs.getString("employee_id"));
+            }
+            DefaultComboBoxModel dcbm = new DefaultComboBoxModel(v1);
+            cb_emp.setModel(dcbm);
+            DbConnect.closeConnection();
+        } catch (java.sql.SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
     public reg_gui() {
         initComponents();
         btn_register.requestFocus();
         loadRoles();
+        loadEmployees();
     }
 
     /**
@@ -61,6 +79,10 @@ public class reg_gui extends javax.swing.JFrame {
         label_sign_in = new javax.swing.JLabel();
         jLabel8 = new javax.swing.JLabel();
         pf_password2 = new javax.swing.JPasswordField();
+        jLabel4 = new javax.swing.JLabel();
+        jLabel7 = new javax.swing.JLabel();
+        jLabel9 = new javax.swing.JLabel();
+        cb_emp = new javax.swing.JComboBox<>();
         jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -78,7 +100,7 @@ public class reg_gui extends javax.swing.JFrame {
         jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
         jLabel3.setForeground(new java.awt.Color(0, 204, 204));
         jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel3.setText("SL PLANTARIUM");
+        jLabel3.setText("SL PLANETARIUM");
 
         tf_uname.setForeground(new java.awt.Color(102, 102, 102));
         tf_uname.setText("Enter Username");
@@ -124,7 +146,7 @@ public class reg_gui extends javax.swing.JFrame {
             }
         });
 
-        jLabel8.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel8.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel8.setForeground(new java.awt.Color(0, 204, 204));
         jLabel8.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel8.setText("Account Registration");
@@ -134,6 +156,20 @@ public class reg_gui extends javax.swing.JFrame {
                 pf_password2ActionPerformed(evt);
             }
         });
+
+        jLabel4.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel4.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel4.setText("Enter your prefered password twice :");
+
+        jLabel7.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel7.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel7.setText("Role :");
+
+        jLabel9.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel9.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel9.setText("Emp-ID :");
+
+        cb_emp.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Select" }));
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -161,10 +197,18 @@ public class reg_gui extends javax.swing.JFrame {
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                                     .addComponent(jLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, 273, Short.MAX_VALUE)
                                     .addComponent(tf_uname)
-                                    .addComponent(cb_role, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addComponent(pf_password1)
                                     .addComponent(pf_password2)
-                                    .addComponent(btn_register, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                    .addComponent(btn_register, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
+                                        .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, 72, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                        .addComponent(cb_role, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                    .addGroup(jPanel1Layout.createSequentialGroup()
+                                        .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, 72, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                        .addComponent(cb_emp, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                                 .addGap(25, 25, 25))))))
         );
         jPanel1Layout.setVerticalGroup(
@@ -179,23 +223,31 @@ public class reg_gui extends javax.swing.JFrame {
                 .addGap(26, 26, 26)
                 .addComponent(tf_uname, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(cb_role, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(cb_role, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MAX_VALUE)
+                    .addComponent(jLabel7, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(cb_emp)
+                    .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
+                .addComponent(jLabel4)
                 .addGap(18, 18, 18)
                 .addComponent(pf_password1, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(pf_password2, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, Short.MAX_VALUE)
+                .addGap(12, 12, 12)
                 .addComponent(btn_register, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jLabel5)
                 .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(label_sign_in, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(23, 23, 23))
+                .addGap(31, 31, 31))
         );
 
-        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(470, 80, 330, 530));
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(470, 80, 330, 600));
 
         jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/planatorium.jpg"))); // NOI18N
         getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, -1, -1));
@@ -216,23 +268,35 @@ public class reg_gui extends javax.swing.JFrame {
 
         if (tf_uname.getText().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter your username!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (cb_role.getSelectedItem().toString().equals("Select")) {
+            JOptionPane.showMessageDialog(this, "Please select your job role!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (cb_emp.getSelectedItem().toString().equals("Select")) {
+            JOptionPane.showMessageDialog(this, "Please select a Employee!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else if (password1.isEmpty() || password2.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Password fields cannot be empty!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else if (!password1.equals(password2)) {
             JOptionPane.showMessageDialog(this, "Passwords do not match!", "Warning", JOptionPane.WARNING_MESSAGE);
-        } else if (cb_role.getSelectedItem().toString().equals("Select")) {
-            JOptionPane.showMessageDialog(this, "Please select your job role!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
-            //Searching the database for potential similar usernames (not allowed). Passwords can be similar (allowed).
+            //Searching the database for potential similar usernames (not allowed) and employee-ids (not allowed). Passwords can be similar (allowed).
             try {
-                ResultSet rs = DbConnect.createConnection().prepareStatement("SELECT * FROM `login` WHERE `username` = ?").executeQuery();
+                String uname = tf_uname.getText();
+                int empId = Integer.parseInt(cb_emp.getSelectedItem().toString());
+                PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `login` WHERE `username` = ? OR `employee_id` = ?");
+                stmt.setString(1, uname);
+                stmt.setInt(2, empId);
+                ResultSet rs = stmt.executeQuery();
 
                 if (rs.next()) {
-                    JOptionPane.showMessageDialog(this, "Username already taken!", "Warning", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Username already taken or Employee login details exists!", "Warning", JOptionPane.WARNING_MESSAGE);
                 } else {
                     try {
-//                        PreparedStatement stmt = DbConnect.createConnection().prepareStatement("INSERT INTO ")
-                    } catch (Exception e) {
+                        PreparedStatement stmt1 = DbConnect.createConnection().prepareStatement("INSERT INTO `login` VALUES(?,?,?)");
+                        stmt1.setString(1, uname);
+                        stmt1.setString(2, password1);
+                        stmt1.setInt(3, empId);
+                        stmt1.executeUpdate();
+                        
+                    } catch (java.sql.SQLException e) {
                         e.printStackTrace();
                     }
                     JOptionPane.showMessageDialog(this, "User Created!", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -241,7 +305,7 @@ public class reg_gui extends javax.swing.JFrame {
                     pf_password1.setText("");
                     pf_password2.setText("");
                 }
-                DbConnect.connection.close();
+                DbConnect.closeConnection();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -293,13 +357,17 @@ public class reg_gui extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btn_register;
+    private javax.swing.JComboBox<String> cb_emp;
     private javax.swing.JComboBox<String> cb_role;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JLabel label_sign_in;
     private javax.swing.JPasswordField pf_password1;

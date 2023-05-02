@@ -28,14 +28,15 @@ public class dashBoard_gui extends javax.swing.JFrame {
 //------------------------------------------------------------------------------    
 //                              Common methods
 //------------------------------------------------------------------------------ 
+
 //Method to get the sql.Date from a JDateChooser    
     private java.sql.Date getSQLDate(JDateChooser chooser) {
         java.util.Date utilDate = chooser.getDate();
         java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
         return sqlDate;
     }
-//Method to get the sql.Time from a TimeChooser    
-
+    
+//Method to get the sql.Time from a JTimeChooser    
     private java.sql.Time getSQLTime(JTimeChooser chooser) {
         int hour = chooser.getHours();
         int min = chooser.getMinutes();
@@ -44,8 +45,8 @@ public class dashBoard_gui extends javax.swing.JFrame {
         java.sql.Time sqlTime = new Time(hour, min, sec);
         return sqlTime;
     }
+    
 // Method to convert java.util.Date to java.time.LocalDate
-
     public java.time.LocalDate convertToLocalDate(java.util.Date dateToConvert) {
         return java.time.LocalDate.ofInstant(
                 dateToConvert.toInstant(), java.time.ZoneId.systemDefault());
@@ -461,13 +462,14 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jLabel18 = new javax.swing.JLabel();
         jLabel19 = new javax.swing.JLabel();
         jLabel20 = new javax.swing.JLabel();
-        jLabel21 = new javax.swing.JLabel();
-        jLabel22 = new javax.swing.JLabel();
-        jLabel23 = new javax.swing.JLabel();
-        jLabel24 = new javax.swing.JLabel();
+        label_seat_total = new javax.swing.JLabel();
+        label_seat_showid = new javax.swing.JLabel();
+        label_seat_price = new javax.swing.JLabel();
+        label_seat_time = new javax.swing.JLabel();
         jButton8 = new javax.swing.JButton();
         jButton9 = new javax.swing.JButton();
         jButton10 = new javax.swing.JButton();
+        btn_seat_select = new javax.swing.JButton();
         jLabel54 = new javax.swing.JLabel();
         jPanel6 = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
@@ -784,17 +786,22 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jLabel20.setText("Time");
         jPanel3.add(jLabel20, new org.netbeans.lib.awtextra.AbsoluteConstraints(7, 132, 172, 45));
 
-        jLabel21.setText("jLabel21");
-        jPanel3.add(jLabel21, new org.netbeans.lib.awtextra.AbsoluteConstraints(185, 261, 187, 45));
+        label_seat_total.setText("jLabel21");
+        jPanel3.add(label_seat_total, new org.netbeans.lib.awtextra.AbsoluteConstraints(185, 261, 187, 45));
 
-        jLabel22.setText("jLabel21");
-        jPanel3.add(jLabel22, new org.netbeans.lib.awtextra.AbsoluteConstraints(185, 69, 192, 45));
+        label_seat_showid.setText("N/A");
+        label_seat_showid.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                label_seat_showidPropertyChange(evt);
+            }
+        });
+        jPanel3.add(label_seat_showid, new org.netbeans.lib.awtextra.AbsoluteConstraints(297, 69, 80, 45));
 
-        jLabel23.setText("jLabel21");
-        jPanel3.add(jLabel23, new org.netbeans.lib.awtextra.AbsoluteConstraints(185, 198, 187, 45));
+        label_seat_price.setText("jLabel21");
+        jPanel3.add(label_seat_price, new org.netbeans.lib.awtextra.AbsoluteConstraints(185, 198, 187, 45));
 
-        jLabel24.setText("jLabel21");
-        jPanel3.add(jLabel24, new org.netbeans.lib.awtextra.AbsoluteConstraints(185, 135, 187, 45));
+        label_seat_time.setText("jLabel21");
+        jPanel3.add(label_seat_time, new org.netbeans.lib.awtextra.AbsoluteConstraints(185, 135, 187, 45));
 
         jButton8.setBackground(new java.awt.Color(0, 153, 153));
         jButton8.setText("Clear");
@@ -817,6 +824,9 @@ public class dashBoard_gui extends javax.swing.JFrame {
             }
         });
         jPanel3.add(jButton10, new org.netbeans.lib.awtextra.AbsoluteConstraints(300, 318, -1, 30));
+
+        btn_seat_select.setText("Select Show");
+        jPanel3.add(btn_seat_select, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 80, 110, 30));
 
         jPanel5.add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(937, 356, -1, 389));
 
@@ -2198,6 +2208,10 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_tf_show_searchFocusLost
 
+    private void label_seat_showidPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_label_seat_showidPropertyChange
+        
+    }//GEN-LAST:event_label_seat_showidPropertyChange
+
     public static void main(String args[]) {
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
@@ -2226,6 +2240,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JButton btn_seat_add;
     private javax.swing.JButton btn_seat_book;
     private javax.swing.JButton btn_seat_clear;
+    private javax.swing.JButton btn_seat_select;
     private javax.swing.JButton btn_seats;
     private javax.swing.JButton btn_show;
     private javax.swing.JButton btn_show_clear;
@@ -2262,10 +2277,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel20;
-    private javax.swing.JLabel jLabel21;
-    private javax.swing.JLabel jLabel22;
-    private javax.swing.JLabel jLabel23;
-    private javax.swing.JLabel jLabel24;
     private javax.swing.JLabel jLabel25;
     private javax.swing.JLabel jLabel26;
     private javax.swing.JLabel jLabel27;
@@ -2344,6 +2355,10 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField8;
     private javax.swing.JTextField jTextField9;
     private javax.swing.JTabbedPane jtp;
+    private javax.swing.JLabel label_seat_price;
+    private javax.swing.JLabel label_seat_showid;
+    private javax.swing.JLabel label_seat_time;
+    private javax.swing.JLabel label_seat_total;
     private javax.swing.JLabel label_show_image;
     private javax.swing.JLabel label_uname;
     private javax.swing.JTable table_edit_show;

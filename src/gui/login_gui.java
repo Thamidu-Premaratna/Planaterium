@@ -26,7 +26,7 @@ public class login_gui extends javax.swing.JFrame {
             }
             DefaultComboBoxModel dcbm = new DefaultComboBoxModel(v1);
             cb_role.setModel(dcbm);
-            DbConnect.connection.close();
+            DbConnect.closeConnection();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -80,7 +80,7 @@ public class login_gui extends javax.swing.JFrame {
         jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
         jLabel3.setForeground(new java.awt.Color(0, 204, 204));
         jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel3.setText("SL PLANATARIUM");
+        jLabel3.setText("SL PLANETARIUM");
 
         tf_uname.setForeground(new java.awt.Color(102, 102, 102));
         tf_uname.setText("Enter Username");
@@ -249,7 +249,7 @@ public class login_gui extends javax.swing.JFrame {
                 } else {
                     JOptionPane.showMessageDialog(this, "Invalid Credentials!", "Warning", JOptionPane.WARNING_MESSAGE);
                 }
-                DbConnect.connection.close();
+                DbConnect.closeConnection();
             } catch (Exception e) {
                 e.printStackTrace();
             }

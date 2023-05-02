@@ -584,7 +584,7 @@
                         </Constraint>
                       </Constraints>
                     </Component>
-                    <Component class="javax.swing.JLabel" name="jLabel21">
+                    <Component class="javax.swing.JLabel" name="label_seat_total">
                       <Properties>
                         <Property name="text" type="java.lang.String" value="jLabel21"/>
                       </Properties>
@@ -594,17 +594,20 @@
                         </Constraint>
                       </Constraints>
                     </Component>
-                    <Component class="javax.swing.JLabel" name="jLabel22">
+                    <Component class="javax.swing.JLabel" name="label_seat_showid">
                       <Properties>
-                        <Property name="text" type="java.lang.String" value="jLabel21"/>
+                        <Property name="text" type="java.lang.String" value="N/A"/>
                       </Properties>
+                      <Events>
+                        <EventHandler event="propertyChange" listener="java.beans.PropertyChangeListener" parameters="java.beans.PropertyChangeEvent" handler="label_seat_showidPropertyChange"/>
+                      </Events>
                       <Constraints>
                         <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-                          <AbsoluteConstraints x="185" y="69" width="192" height="45"/>
+                          <AbsoluteConstraints x="297" y="69" width="80" height="45"/>
                         </Constraint>
                       </Constraints>
                     </Component>
-                    <Component class="javax.swing.JLabel" name="jLabel23">
+                    <Component class="javax.swing.JLabel" name="label_seat_price">
                       <Properties>
                         <Property name="text" type="java.lang.String" value="jLabel21"/>
                       </Properties>
@@ -614,7 +617,7 @@
                         </Constraint>
                       </Constraints>
                     </Component>
-                    <Component class="javax.swing.JLabel" name="jLabel24">
+                    <Component class="javax.swing.JLabel" name="label_seat_time">
                       <Properties>
                         <Property name="text" type="java.lang.String" value="jLabel21"/>
                       </Properties>
@@ -666,6 +669,16 @@
                       <Constraints>
                         <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
                           <AbsoluteConstraints x="300" y="318" width="-1" height="30"/>
+                        </Constraint>
+                      </Constraints>
+                    </Component>
+                    <Component class="javax.swing.JButton" name="btn_seat_select">
+                      <Properties>
+                        <Property name="text" type="java.lang.String" value="Select Show"/>
+                      </Properties>
+                      <Constraints>
+                        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
+                          <AbsoluteConstraints x="170" y="80" width="110" height="30"/>
                         </Constraint>
                       </Constraints>
                     </Component>
