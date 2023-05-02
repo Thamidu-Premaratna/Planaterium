@@ -501,7 +501,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
         table_payment = new javax.swing.JTable();
         jLabel55 = new javax.swing.JLabel();
         jPanel13 = new javax.swing.JPanel();
-        jLabel31 = new javax.swing.JLabel();
         jLabel32 = new javax.swing.JLabel();
         jLabel33 = new javax.swing.JLabel();
         jLabel34 = new javax.swing.JLabel();
@@ -511,16 +510,16 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jLabel38 = new javax.swing.JLabel();
         jLabel39 = new javax.swing.JLabel();
         jButton15 = new javax.swing.JButton();
-        jTextField8 = new javax.swing.JTextField();
-        jTextField9 = new javax.swing.JTextField();
-        jTextField10 = new javax.swing.JTextField();
-        jTextField11 = new javax.swing.JTextField();
-        jTextField13 = new javax.swing.JTextField();
-        jTextField14 = new javax.swing.JTextField();
-        jTextField15 = new javax.swing.JTextField();
+        tf_pay_tno = new javax.swing.JTextField();
+        tf_pay_showname = new javax.swing.JTextField();
+        tf_pay_total = new javax.swing.JTextField();
+        tf_pay_date = new javax.swing.JTextField();
+        tf_pay_given = new javax.swing.JTextField();
+        tf_pay_balance = new javax.swing.JTextField();
         jButton16 = new javax.swing.JButton();
         jButton17 = new javax.swing.JButton();
         jButton18 = new javax.swing.JButton();
+        cb_pay_type = new javax.swing.JComboBox<>();
         jPanel14 = new javax.swing.JPanel();
         jPanel16 = new javax.swing.JPanel();
         jScrollPane3 = new javax.swing.JScrollPane();
@@ -841,7 +840,8 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         jPanel6.setBackground(new java.awt.Color(255, 255, 255));
 
-        jPanel7.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        jPanel7.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel7.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Select Show", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("sansserif", 0, 14))); // NOI18N
 
         label_show_image.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         label_show_image.setText("image");
@@ -883,18 +883,23 @@ public class dashBoard_gui extends javax.swing.JFrame {
         });
 
         jLabel25.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel25.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel25.setText("Show Name");
 
         jLabel26.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel26.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel26.setText("Show ID");
 
         jLabel27.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel27.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel27.setText("Starting Time");
 
         jLabel28.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel28.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel28.setText("Ending Time");
 
         jLabel29.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        jLabel29.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel29.setText("Show date");
 
         javax.swing.GroupLayout jPanel7Layout = new javax.swing.GroupLayout(jPanel7);
@@ -953,17 +958,17 @@ public class dashBoard_gui extends javax.swing.JFrame {
                     .addComponent(tf_show_name, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(36, 36, 36)
                 .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel27, javax.swing.GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE)
-                    .addComponent(tc_show_starttime, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jLabel27, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(tc_show_starttime, javax.swing.GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE))
                 .addGap(34, 34, 34)
                 .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel28, javax.swing.GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE)
-                    .addComponent(tc_show_endtime, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jLabel28, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(tc_show_endtime, javax.swing.GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE))
                 .addGap(36, 36, 36)
                 .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel29, javax.swing.GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE)
-                    .addComponent(dc_show_date, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 56, Short.MAX_VALUE)
+                    .addComponent(jLabel29, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(dc_show_date, javax.swing.GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btn_show_insert)
                     .addComponent(btn_show_clear)
@@ -990,6 +995,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
+        table_show.setRowHeight(25);
         table_show.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 table_showMouseClicked(evt);
@@ -1039,9 +1045,9 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addGroup(jPanel10Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(tf_show_search)
                     .addComponent(jLabel30, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 26, Short.MAX_VALUE)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 620, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 705, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
 
         javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
@@ -1058,19 +1064,19 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel6Layout.createSequentialGroup()
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(jPanel10, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel6Layout.createSequentialGroup()
+                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel6Layout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(56, Short.MAX_VALUE))
+                        .addComponent(jPanel7, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jPanel10, javax.swing.GroupLayout.PREFERRED_SIZE, 743, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
         jtp.addTab("Show", jPanel6);
 
         jPanel11.setBackground(new java.awt.Color(255, 255, 255));
 
-        jPanel12.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        jPanel12.setBackground(new java.awt.Color(255, 255, 255));
 
         jTextField7.setText("Search ");
         jTextField7.addActionListener(new java.awt.event.ActionListener() {
@@ -1078,6 +1084,8 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 jTextField7ActionPerformed(evt);
             }
         });
+
+        jScrollPane2.setBackground(new java.awt.Color(255, 255, 255));
 
         table_payment.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -1106,7 +1114,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
             .addGroup(jPanel12Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 965, Short.MAX_VALUE)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 933, Short.MAX_VALUE)
                     .addGroup(jPanel12Layout.createSequentialGroup()
                         .addComponent(jLabel55)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -1126,9 +1134,8 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        jLabel31.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
-        jLabel31.setText("Total Income");
-        jLabel31.setVerticalAlignment(javax.swing.SwingConstants.BOTTOM);
+        jPanel13.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel13.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Payment", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 0, 14))); // NOI18N
 
         jLabel32.setFont(new java.awt.Font("Segoe UI", 1, 48)); // NOI18N
         jLabel32.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -1136,32 +1143,39 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jLabel32.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
         jLabel33.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel33.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel33.setText("Show Name");
 
         jLabel34.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel34.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel34.setText("Ticket No");
 
         jLabel35.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel35.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel35.setText("Total Amount");
 
         jLabel36.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel36.setText("Type");
+        jLabel36.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        jLabel36.setText("Payment Type");
 
         jLabel37.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel37.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel37.setText("Date");
 
         jLabel38.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel38.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel38.setText("Given");
 
         jLabel39.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel39.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel39.setText("Balance");
 
         jButton15.setBackground(new java.awt.Color(0, 153, 153));
         jButton15.setText("Insert");
 
-        jTextField8.addActionListener(new java.awt.event.ActionListener() {
+        tf_pay_tno.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField8ActionPerformed(evt);
+                tf_pay_tnoActionPerformed(evt);
             }
         });
 
@@ -1179,6 +1193,9 @@ public class dashBoard_gui extends javax.swing.JFrame {
             }
         });
 
+        cb_pay_type.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
+        cb_pay_type.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Select" }));
+
         javax.swing.GroupLayout jPanel13Layout = new javax.swing.GroupLayout(jPanel13);
         jPanel13.setLayout(jPanel13Layout);
         jPanel13Layout.setHorizontalGroup(
@@ -1188,34 +1205,31 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel32, javax.swing.GroupLayout.DEFAULT_SIZE, 359, Short.MAX_VALUE)
                     .addGroup(jPanel13Layout.createSequentialGroup()
-                        .addComponent(jLabel31, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addContainerGap())
-                    .addGroup(jPanel13Layout.createSequentialGroup()
                         .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel13Layout.createSequentialGroup()
                                 .addComponent(jLabel33, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
-                                .addComponent(jTextField9))
+                                .addComponent(tf_pay_showname))
                             .addGroup(jPanel13Layout.createSequentialGroup()
                                 .addComponent(jLabel35, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
-                                .addComponent(jTextField10))
+                                .addComponent(tf_pay_total))
                             .addGroup(jPanel13Layout.createSequentialGroup()
                                 .addComponent(jLabel36, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
-                                .addComponent(jTextField11))
+                                .addComponent(cb_pay_type, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                             .addGroup(jPanel13Layout.createSequentialGroup()
                                 .addComponent(jLabel37, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
-                                .addComponent(jTextField13))
+                                .addComponent(tf_pay_date))
                             .addGroup(jPanel13Layout.createSequentialGroup()
                                 .addComponent(jLabel38, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
-                                .addComponent(jTextField14))
+                                .addComponent(tf_pay_given))
                             .addGroup(jPanel13Layout.createSequentialGroup()
                                 .addComponent(jLabel39, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(18, 18, 18)
-                                .addComponent(jTextField15))
+                                .addComponent(tf_pay_balance))
                             .addGroup(jPanel13Layout.createSequentialGroup()
                                 .addComponent(jButton15)
                                 .addGap(64, 64, 64)
@@ -1228,44 +1242,42 @@ public class dashBoard_gui extends javax.swing.JFrame {
                     .addGroup(jPanel13Layout.createSequentialGroup()
                         .addComponent(jLabel34, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
-                        .addComponent(jTextField8)
+                        .addComponent(tf_pay_tno)
                         .addContainerGap())))
         );
         jPanel13Layout.setVerticalGroup(
             jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel13Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jLabel31, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addContainerGap(36, Short.MAX_VALUE)
                 .addComponent(jLabel32, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(40, 40, 40)
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel34, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(tf_pay_tno, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel33, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(tf_pay_showname, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel35, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(tf_pay_total, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel36, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField11, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jLabel36, javax.swing.GroupLayout.DEFAULT_SIZE, 35, Short.MAX_VALUE)
+                    .addComponent(cb_pay_type))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel37, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField13, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(tf_pay_date, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel38, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField14, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(tf_pay_given, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel39, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField15, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(tf_pay_balance, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(31, 31, 31)
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -1291,10 +1303,10 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jPanel11Layout.setVerticalGroup(
             jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel11Layout.createSequentialGroup()
-                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel11Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jPanel12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jPanel13, javax.swing.GroupLayout.PREFERRED_SIZE, 722, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(0, 15, Short.MAX_VALUE))
+                    .addComponent(jPanel13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(0, 17, Short.MAX_VALUE))
         );
 
         jtp.addTab("Payment", jPanel11);
@@ -1317,6 +1329,8 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
+        table_emp.setRowHeight(25);
+        table_emp.setRowMargin(2);
         table_emp.getTableHeader().setReorderingAllowed(false);
         table_emp.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -1352,24 +1366,31 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jLabel40.setText("Employee Details");
 
         jLabel41.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel41.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel41.setText("Emp-ID");
 
         jLabel42.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel42.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel42.setText("First Name");
 
         jLabel43.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel43.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel43.setText("Last Name");
 
         jLabel44.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel44.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel44.setText("Role");
 
         jLabel45.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel45.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel45.setText("Address");
 
         jLabel46.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel46.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel46.setText("Tel No");
 
         jLabel47.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel47.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel47.setText("DOB");
 
         btn_emp_add.setBackground(new java.awt.Color(0, 153, 153));
@@ -1930,9 +1951,9 @@ public class dashBoard_gui extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField7ActionPerformed
 
-    private void jTextField8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField8ActionPerformed
+    private void tf_pay_tnoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tf_pay_tnoActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField8ActionPerformed
+    }//GEN-LAST:event_tf_pay_tnoActionPerformed
 
     private void btn_dashboardMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btn_dashboardMouseClicked
         // TODO add your handling code here:
@@ -2249,6 +2270,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JButton btn_show_insert;
     private javax.swing.JButton btn_show_update;
     private javax.swing.JComboBox<String> cb_emp_role;
+    private javax.swing.JComboBox<String> cb_pay_type;
     private javax.swing.JComboBox<String> cb_seat_from;
     private javax.swing.JComboBox<String> cb_seat_to;
     private javax.swing.JComboBox<String> cb_seat_type;
@@ -2284,7 +2306,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel29;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel30;
-    private javax.swing.JLabel jLabel31;
     private javax.swing.JLabel jLabel32;
     private javax.swing.JLabel jLabel33;
     private javax.swing.JLabel jLabel34;
@@ -2341,19 +2362,12 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JSeparator jSeparator1;
-    private javax.swing.JTextField jTextField10;
-    private javax.swing.JTextField jTextField11;
-    private javax.swing.JTextField jTextField13;
-    private javax.swing.JTextField jTextField14;
-    private javax.swing.JTextField jTextField15;
     private javax.swing.JTextField jTextField23;
     private javax.swing.JTextField jTextField24;
     private javax.swing.JTextField jTextField25;
     private javax.swing.JTextField jTextField26;
     private javax.swing.JTextField jTextField27;
     private javax.swing.JTextField jTextField7;
-    private javax.swing.JTextField jTextField8;
-    private javax.swing.JTextField jTextField9;
     private javax.swing.JTabbedPane jtp;
     private javax.swing.JLabel label_seat_price;
     private javax.swing.JLabel label_seat_showid;
@@ -2372,6 +2386,12 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JTextField tf_emp_id;
     private javax.swing.JTextField tf_emp_lname;
     private javax.swing.JTextField tf_emp_telno;
+    private javax.swing.JTextField tf_pay_balance;
+    private javax.swing.JTextField tf_pay_date;
+    private javax.swing.JTextField tf_pay_given;
+    private javax.swing.JTextField tf_pay_showname;
+    private javax.swing.JTextField tf_pay_tno;
+    private javax.swing.JTextField tf_pay_total;
     private javax.swing.JTextField tf_show_id;
     private javax.swing.JTextField tf_show_name;
     private javax.swing.JTextField tf_show_search;

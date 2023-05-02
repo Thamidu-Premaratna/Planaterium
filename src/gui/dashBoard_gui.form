@@ -734,15 +734,15 @@
                 </DimensionLayout>
                 <DimensionLayout dim="1">
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Group type="102" alignment="0" attributes="0">
-                          <Group type="103" groupAlignment="1" max="-2" attributes="0">
-                              <Component id="jPanel10" alignment="0" max="32767" attributes="0"/>
-                              <Group type="102" alignment="0" attributes="0">
+                      <Group type="102" attributes="0">
+                          <Group type="103" groupAlignment="0" attributes="0">
+                              <Group type="102" attributes="0">
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="jPanel7" min="-2" max="-2" attributes="0"/>
+                                  <Component id="jPanel7" max="32767" attributes="0"/>
                               </Group>
+                              <Component id="jPanel10" alignment="0" pref="743" max="32767" attributes="0"/>
                           </Group>
-                          <EmptySpace pref="56" max="32767" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
                       </Group>
                   </Group>
                 </DimensionLayout>
@@ -750,9 +750,14 @@
               <SubComponents>
                 <Container class="javax.swing.JPanel" name="jPanel7">
                   <Properties>
+                    <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                      <Color blue="ff" green="ff" red="ff" type="rgb"/>
+                    </Property>
                     <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
-                      <Border info="org.netbeans.modules.form.compat2.border.LineBorderInfo">
-                        <LineBorder/>
+                      <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
+                        <TitledBorder justification="2" title="Select Show">
+                          <Font PropertyName="font" name="sansserif" size="14" style="0"/>
+                        </TitledBorder>
                       </Border>
                     </Property>
                   </Properties>
@@ -827,20 +832,20 @@
                               </Group>
                               <EmptySpace min="-2" pref="36" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                                  <Component id="jLabel27" pref="32" max="32767" attributes="0"/>
-                                  <Component id="tc_show_starttime" max="32767" attributes="0"/>
+                                  <Component id="jLabel27" max="32767" attributes="0"/>
+                                  <Component id="tc_show_starttime" pref="32" max="32767" attributes="0"/>
                               </Group>
                               <EmptySpace min="-2" pref="34" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                                  <Component id="jLabel28" pref="32" max="32767" attributes="0"/>
-                                  <Component id="tc_show_endtime" max="32767" attributes="0"/>
+                                  <Component id="jLabel28" max="32767" attributes="0"/>
+                                  <Component id="tc_show_endtime" pref="32" max="32767" attributes="0"/>
                               </Group>
                               <EmptySpace min="-2" pref="36" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                                  <Component id="jLabel29" pref="32" max="32767" attributes="0"/>
-                                  <Component id="dc_show_date" max="32767" attributes="0"/>
+                                  <Component id="jLabel29" max="32767" attributes="0"/>
+                                  <Component id="dc_show_date" pref="32" max="32767" attributes="0"/>
                               </Group>
-                              <EmptySpace pref="56" max="32767" attributes="0"/>
+                              <EmptySpace max="32767" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="btn_show_insert" alignment="3" min="-2" max="-2" attributes="0"/>
                                   <Component id="btn_show_clear" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -921,6 +926,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="14" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Show Name"/>
                       </Properties>
                     </Component>
@@ -929,6 +935,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="14" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Show ID"/>
                       </Properties>
                     </Component>
@@ -937,6 +944,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="14" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Starting Time"/>
                       </Properties>
                     </Component>
@@ -945,6 +953,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="14" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Ending Time"/>
                       </Properties>
                     </Component>
@@ -953,6 +962,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="14" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Show date"/>
                       </Properties>
                     </Component>
@@ -999,9 +1009,9 @@
                                   <Component id="tf_show_search" alignment="0" max="32767" attributes="0"/>
                                   <Component id="jLabel30" alignment="0" max="32767" attributes="0"/>
                               </Group>
-                              <EmptySpace pref="26" max="32767" attributes="0"/>
-                              <Component id="jScrollPane1" min="-2" pref="620" max="-2" attributes="0"/>
-                              <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
+                              <EmptySpace max="32767" attributes="0"/>
+                              <Component id="jScrollPane1" min="-2" pref="705" max="-2" attributes="0"/>
+                              <EmptySpace max="-2" attributes="0"/>
                           </Group>
                       </Group>
                     </DimensionLayout>
@@ -1060,6 +1070,7 @@
                                 </Column>
                               </TableColumnModel>
                             </Property>
+                            <Property name="rowHeight" type="int" value="25"/>
                             <Property name="tableHeader" type="javax.swing.table.JTableHeader" editor="org.netbeans.modules.form.editors2.JTableHeaderEditor">
                               <TableHeader reorderingAllowed="true" resizingAllowed="true"/>
                             </Property>
@@ -1123,11 +1134,11 @@
                 <DimensionLayout dim="1">
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Group type="102" alignment="0" attributes="0">
-                          <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="jPanel12" alignment="0" min="-2" max="-2" attributes="0"/>
-                              <Component id="jPanel13" alignment="0" min="-2" pref="722" max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="1" attributes="0">
+                              <Component id="jPanel12" min="-2" max="-2" attributes="0"/>
+                              <Component id="jPanel13" min="-2" max="-2" attributes="0"/>
                           </Group>
-                          <EmptySpace min="0" pref="15" max="32767" attributes="0"/>
+                          <EmptySpace min="0" pref="17" max="32767" attributes="0"/>
                       </Group>
                   </Group>
                 </DimensionLayout>
@@ -1135,10 +1146,8 @@
               <SubComponents>
                 <Container class="javax.swing.JPanel" name="jPanel12">
                   <Properties>
-                    <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
-                      <Border info="org.netbeans.modules.form.compat2.border.LineBorderInfo">
-                        <LineBorder/>
-                      </Border>
+                    <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                      <Color blue="ff" green="ff" red="ff" type="rgb"/>
                     </Property>
                   </Properties>
 
@@ -1148,7 +1157,7 @@
                           <Group type="102" attributes="0">
                               <EmptySpace max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="jScrollPane2" alignment="0" pref="965" max="32767" attributes="0"/>
+                                  <Component id="jScrollPane2" alignment="0" pref="933" max="32767" attributes="0"/>
                                   <Group type="102" alignment="0" attributes="0">
                                       <Component id="jLabel55" min="-2" max="-2" attributes="0"/>
                                       <EmptySpace max="-2" attributes="0"/>
@@ -1185,6 +1194,11 @@
                       </Events>
                     </Component>
                     <Container class="javax.swing.JScrollPane" name="jScrollPane2">
+                      <Properties>
+                        <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="ff" green="ff" red="ff" type="rgb"/>
+                        </Property>
+                      </Properties>
                       <AuxValues>
                         <AuxValue name="autoScrollPane" type="java.lang.Boolean" value="true"/>
                       </AuxValues>
@@ -1260,6 +1274,18 @@
                   </SubComponents>
                 </Container>
                 <Container class="javax.swing.JPanel" name="jPanel13">
+                  <Properties>
+                    <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                      <Color blue="ff" green="ff" red="ff" type="rgb"/>
+                    </Property>
+                    <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
+                      <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
+                        <TitledBorder justification="2" title="Payment">
+                          <Font PropertyName="font" name="Segoe UI" size="14" style="0"/>
+                        </TitledBorder>
+                      </Border>
+                    </Property>
+                  </Properties>
 
                   <Layout>
                     <DimensionLayout dim="0">
@@ -1269,40 +1295,36 @@
                               <Group type="103" groupAlignment="0" attributes="0">
                                   <Component id="jLabel32" alignment="0" pref="359" max="32767" attributes="0"/>
                                   <Group type="102" alignment="0" attributes="0">
-                                      <Component id="jLabel31" max="32767" attributes="0"/>
-                                      <EmptySpace max="-2" attributes="0"/>
-                                  </Group>
-                                  <Group type="102" alignment="0" attributes="0">
                                       <Group type="103" groupAlignment="0" attributes="0">
                                           <Group type="102" alignment="0" attributes="0">
                                               <Component id="jLabel33" min="-2" pref="166" max="-2" attributes="0"/>
                                               <EmptySpace type="separate" max="-2" attributes="0"/>
-                                              <Component id="jTextField9" max="32767" attributes="0"/>
+                                              <Component id="tf_pay_showname" max="32767" attributes="0"/>
                                           </Group>
                                           <Group type="102" alignment="0" attributes="0">
                                               <Component id="jLabel35" min="-2" pref="166" max="-2" attributes="0"/>
                                               <EmptySpace type="separate" max="-2" attributes="0"/>
-                                              <Component id="jTextField10" max="32767" attributes="0"/>
+                                              <Component id="tf_pay_total" max="32767" attributes="0"/>
                                           </Group>
                                           <Group type="102" alignment="0" attributes="0">
                                               <Component id="jLabel36" min="-2" pref="166" max="-2" attributes="0"/>
                                               <EmptySpace type="separate" max="-2" attributes="0"/>
-                                              <Component id="jTextField11" max="32767" attributes="0"/>
+                                              <Component id="cb_pay_type" max="32767" attributes="0"/>
                                           </Group>
                                           <Group type="102" alignment="0" attributes="0">
                                               <Component id="jLabel37" min="-2" pref="166" max="-2" attributes="0"/>
                                               <EmptySpace type="separate" max="-2" attributes="0"/>
-                                              <Component id="jTextField13" max="32767" attributes="0"/>
+                                              <Component id="tf_pay_date" max="32767" attributes="0"/>
                                           </Group>
                                           <Group type="102" alignment="0" attributes="0">
                                               <Component id="jLabel38" min="-2" pref="166" max="-2" attributes="0"/>
                                               <EmptySpace type="separate" max="-2" attributes="0"/>
-                                              <Component id="jTextField14" max="32767" attributes="0"/>
+                                              <Component id="tf_pay_given" max="32767" attributes="0"/>
                                           </Group>
                                           <Group type="102" alignment="0" attributes="0">
                                               <Component id="jLabel39" min="-2" pref="166" max="-2" attributes="0"/>
                                               <EmptySpace type="separate" max="-2" attributes="0"/>
-                                              <Component id="jTextField15" max="32767" attributes="0"/>
+                                              <Component id="tf_pay_balance" max="32767" attributes="0"/>
                                           </Group>
                                           <Group type="102" alignment="0" attributes="0">
                                               <Component id="jButton15" min="-2" max="-2" attributes="0"/>
@@ -1320,7 +1342,7 @@
                                   <Group type="102" alignment="0" attributes="0">
                                       <Component id="jLabel34" min="-2" pref="166" max="-2" attributes="0"/>
                                       <EmptySpace type="separate" max="-2" attributes="0"/>
-                                      <Component id="jTextField8" max="32767" attributes="0"/>
+                                      <Component id="tf_pay_tno" max="32767" attributes="0"/>
                                       <EmptySpace max="-2" attributes="0"/>
                                   </Group>
                               </Group>
@@ -1330,44 +1352,42 @@
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" alignment="0" attributes="0">
-                              <EmptySpace max="32767" attributes="0"/>
-                              <Component id="jLabel31" min="-2" pref="61" max="-2" attributes="0"/>
-                              <EmptySpace type="separate" max="-2" attributes="0"/>
+                              <EmptySpace pref="36" max="32767" attributes="0"/>
                               <Component id="jLabel32" min="-2" pref="98" max="-2" attributes="0"/>
                               <EmptySpace min="-2" pref="40" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="jLabel34" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
-                                  <Component id="jTextField8" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
+                                  <Component id="tf_pay_tno" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace type="separate" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="jLabel33" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
-                                  <Component id="jTextField9" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
+                                  <Component id="tf_pay_showname" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace type="separate" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="jLabel35" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
-                                  <Component id="jTextField10" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
+                                  <Component id="tf_pay_total" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace type="separate" max="-2" attributes="0"/>
-                              <Group type="103" groupAlignment="3" attributes="0">
-                                  <Component id="jLabel36" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
-                                  <Component id="jTextField11" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
+                              <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                                  <Component id="jLabel36" pref="35" max="32767" attributes="0"/>
+                                  <Component id="cb_pay_type" max="32767" attributes="0"/>
                               </Group>
                               <EmptySpace type="separate" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="jLabel37" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
-                                  <Component id="jTextField13" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
+                                  <Component id="tf_pay_date" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace type="separate" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="jLabel38" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
-                                  <Component id="jTextField14" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
+                                  <Component id="tf_pay_given" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace type="separate" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="jLabel39" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
-                                  <Component id="jTextField15" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
+                                  <Component id="tf_pay_balance" alignment="3" min="-2" pref="35" max="-2" attributes="0"/>
                               </Group>
                               <EmptySpace min="-2" pref="31" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" attributes="0">
@@ -1385,15 +1405,6 @@
                     </DimensionLayout>
                   </Layout>
                   <SubComponents>
-                    <Component class="javax.swing.JLabel" name="jLabel31">
-                      <Properties>
-                        <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
-                          <Font name="Segoe UI" size="24" style="1"/>
-                        </Property>
-                        <Property name="text" type="java.lang.String" value="Total Income"/>
-                        <Property name="verticalAlignment" type="int" value="3"/>
-                      </Properties>
-                    </Component>
                     <Component class="javax.swing.JLabel" name="jLabel32">
                       <Properties>
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
@@ -1413,6 +1424,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Show Name"/>
                       </Properties>
                     </Component>
@@ -1421,6 +1433,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Ticket No"/>
                       </Properties>
                     </Component>
@@ -1429,6 +1442,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Total Amount"/>
                       </Properties>
                     </Component>
@@ -1437,7 +1451,8 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
-                        <Property name="text" type="java.lang.String" value="Type"/>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
+                        <Property name="text" type="java.lang.String" value="Payment Type"/>
                       </Properties>
                     </Component>
                     <Component class="javax.swing.JLabel" name="jLabel37">
@@ -1445,6 +1460,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Date"/>
                       </Properties>
                     </Component>
@@ -1453,6 +1469,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Given"/>
                       </Properties>
                     </Component>
@@ -1461,6 +1478,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Balance"/>
                       </Properties>
                     </Component>
@@ -1472,22 +1490,20 @@
                         <Property name="text" type="java.lang.String" value="Insert"/>
                       </Properties>
                     </Component>
-                    <Component class="javax.swing.JTextField" name="jTextField8">
+                    <Component class="javax.swing.JTextField" name="tf_pay_tno">
                       <Events>
-                        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jTextField8ActionPerformed"/>
+                        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="tf_pay_tnoActionPerformed"/>
                       </Events>
                     </Component>
-                    <Component class="javax.swing.JTextField" name="jTextField9">
+                    <Component class="javax.swing.JTextField" name="tf_pay_showname">
                     </Component>
-                    <Component class="javax.swing.JTextField" name="jTextField10">
+                    <Component class="javax.swing.JTextField" name="tf_pay_total">
                     </Component>
-                    <Component class="javax.swing.JTextField" name="jTextField11">
+                    <Component class="javax.swing.JTextField" name="tf_pay_date">
                     </Component>
-                    <Component class="javax.swing.JTextField" name="jTextField13">
+                    <Component class="javax.swing.JTextField" name="tf_pay_given">
                     </Component>
-                    <Component class="javax.swing.JTextField" name="jTextField14">
-                    </Component>
-                    <Component class="javax.swing.JTextField" name="jTextField15">
+                    <Component class="javax.swing.JTextField" name="tf_pay_balance">
                     </Component>
                     <Component class="javax.swing.JButton" name="jButton16">
                       <Properties>
@@ -1515,6 +1531,21 @@
                       <Events>
                         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton18ActionPerformed"/>
                       </Events>
+                    </Component>
+                    <Component class="javax.swing.JComboBox" name="cb_pay_type">
+                      <Properties>
+                        <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+                          <Font name="Segoe UI" size="12" style="0"/>
+                        </Property>
+                        <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+                          <StringArray count="1">
+                            <StringItem index="0" value="Select"/>
+                          </StringArray>
+                        </Property>
+                      </Properties>
+                      <AuxValues>
+                        <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
+                      </AuxValues>
                     </Component>
                   </SubComponents>
                 </Container>
@@ -1643,6 +1674,8 @@
                                 </Column>
                               </TableColumnModel>
                             </Property>
+                            <Property name="rowHeight" type="int" value="25"/>
+                            <Property name="rowMargin" type="int" value="2"/>
                             <Property name="tableHeader" type="javax.swing.table.JTableHeader" editor="org.netbeans.modules.form.editors2.JTableHeaderEditor">
                               <TableHeader reorderingAllowed="false" resizingAllowed="true"/>
                             </Property>
@@ -1804,6 +1837,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Emp-ID"/>
                       </Properties>
                     </Component>
@@ -1812,6 +1846,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="First Name"/>
                       </Properties>
                     </Component>
@@ -1820,6 +1855,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Last Name"/>
                       </Properties>
                     </Component>
@@ -1828,6 +1864,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Role"/>
                       </Properties>
                     </Component>
@@ -1836,6 +1873,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Address"/>
                       </Properties>
                     </Component>
@@ -1844,6 +1882,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="Tel No"/>
                       </Properties>
                     </Component>
@@ -1852,6 +1891,7 @@
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                           <Font name="Segoe UI" size="18" style="1"/>
                         </Property>
+                        <Property name="horizontalAlignment" type="int" value="4"/>
                         <Property name="text" type="java.lang.String" value="DOB"/>
                       </Properties>
                     </Component>
