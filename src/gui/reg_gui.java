@@ -290,7 +290,7 @@ public class reg_gui extends javax.swing.JFrame {
                     JOptionPane.showMessageDialog(this, "Username already taken or Employee login details exists!", "Warning", JOptionPane.WARNING_MESSAGE);
                 } else {
                     try {
-                        PreparedStatement stmt1 = DbConnect.createConnection().prepareStatement("INSERT INTO `login` VALUES(?,?,?)");
+                        PreparedStatement stmt1 = DbConnect.createConnection().prepareStatement("INSERT INTO `login`(username,password,employee_id) VALUES(?,?,?)");
                         stmt1.setString(1, uname);
                         stmt1.setString(2, password1);
                         stmt1.setInt(3, empId);
@@ -302,6 +302,7 @@ public class reg_gui extends javax.swing.JFrame {
                     JOptionPane.showMessageDialog(this, "User Created!", "Success", JOptionPane.INFORMATION_MESSAGE);
                     tf_uname.setText("");
                     cb_role.setSelectedIndex(0);
+                    cb_emp.setSelectedIndex(0);
                     pf_password1.setText("");
                     pf_password2.setText("");
                 }
