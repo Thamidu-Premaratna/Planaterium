@@ -10,6 +10,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Vector;
+import java.util.regex.Pattern;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
@@ -28,14 +29,13 @@ public class dashBoard_gui extends javax.swing.JFrame {
 //------------------------------------------------------------------------------    
 //                              Common methods
 //------------------------------------------------------------------------------ 
-
 //Method to get the sql.Date from a JDateChooser    
     private java.sql.Date getSQLDate(JDateChooser chooser) {
         java.util.Date utilDate = chooser.getDate();
         java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
         return sqlDate;
     }
-    
+
 //Method to get the sql.Time from a JTimeChooser    
     private java.sql.Time getSQLTime(JTimeChooser chooser) {
         int hour = chooser.getHours();
@@ -45,7 +45,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         java.sql.Time sqlTime = new Time(hour, min, sec);
         return sqlTime;
     }
-    
+
 // Method to convert java.util.Date to java.time.LocalDate
     public java.time.LocalDate convertToLocalDate(java.util.Date dateToConvert) {
         return java.time.LocalDate.ofInstant(
@@ -2048,10 +2048,15 @@ public class dashBoard_gui extends javax.swing.JFrame {
     }//GEN-LAST:event_table_empMouseClicked
 
     private void btn_emp_addActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_addActionPerformed
+        //Regex for validating mobile number (Sri lanka only)
+        String telno_regex = "/^(?:0|94|\\+94)?(?:(11|21|23|24|25|26|27|31|32|33|34|35|36|37|38|41|45|47|51|52|54|55|57|63|65|66|67|81|912)(0|2|3|4|5|7|9)|7(0|1|2|4|5|6|7|8)\\d)\\d{6}$/";
+        Pattern pattern = Pattern.compile(telno_regex);
         //EmployeeId is auto matically generated!
         //Check if all fields are filled - Validations, Except the DOB
         if (tf_emp_fname.getText().isEmpty() || tf_emp_lname.getText().isEmpty() || tf_emp_telno.getText().isEmpty() || tf_emp_address.getText().isEmpty()) {
             JOptionPane.showMessageDialog(this, "All fields except DOB are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (!pattern.matcher(tf_emp_telno.getText()).matches()) {
+            JOptionPane.showMessageDialog(this, "Please enter valid mobile number (Sri lanka)!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else if (cb_emp_role.getSelectedItem().toString().equals("Select")) {
             JOptionPane.showMessageDialog(this, "Please select a role!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else if (cb_emp_role.getSelectedItem().toString().equals("Admin")) {
@@ -2230,7 +2235,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     }//GEN-LAST:event_tf_show_searchFocusLost
 
     private void label_seat_showidPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_label_seat_showidPropertyChange
-        
+
     }//GEN-LAST:event_label_seat_showidPropertyChange
 
     public static void main(String args[]) {
