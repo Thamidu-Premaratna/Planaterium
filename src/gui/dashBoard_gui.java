@@ -382,9 +382,11 @@ public class dashBoard_gui extends javax.swing.JFrame {
 //------------------------------------------------------------------------------    
 //                              Seat
 //------------------------------------------------------------------------------
+    
 //------------------------------------------------------------------------------    
 //                              Payment
 //------------------------------------------------------------------------------ 
+    
 //------------------------------------------------------------------------------    
 //                              Dashboard constructors
 //------------------------------------------------------------------------------
@@ -409,9 +411,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         switch (loginType) {
             case 1 -> { // Receptionist logged in, initializations
-                btn_payment.setEnabled(false);
                 btn_employee.setEnabled(false);
-                jtp.setEnabledAt(3, false);
                 jtp.setEnabledAt(4, false);
             }
             case 2 -> { //Administrator logged in, initialiations
@@ -471,6 +471,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jButton10 = new javax.swing.JButton();
         btn_seat_select = new javax.swing.JButton();
         jLabel54 = new javax.swing.JLabel();
+        jLabel10 = new javax.swing.JLabel();
         jPanel6 = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
         label_show_image = new javax.swing.JLabel();
@@ -496,7 +497,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jLabel30 = new javax.swing.JLabel();
         jPanel11 = new javax.swing.JPanel();
         jPanel12 = new javax.swing.JPanel();
-        jTextField7 = new javax.swing.JTextField();
+        tf_pay_search = new javax.swing.JTextField();
         jScrollPane2 = new javax.swing.JScrollPane();
         table_payment = new javax.swing.JTable();
         jLabel55 = new javax.swing.JLabel();
@@ -509,7 +510,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jLabel37 = new javax.swing.JLabel();
         jLabel38 = new javax.swing.JLabel();
         jLabel39 = new javax.swing.JLabel();
-        jButton15 = new javax.swing.JButton();
+        btn_pay_insert = new javax.swing.JButton();
         tf_pay_tno = new javax.swing.JTextField();
         tf_pay_showname = new javax.swing.JTextField();
         tf_pay_total = new javax.swing.JTextField();
@@ -836,6 +837,16 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jLabel54.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         jPanel5.add(jLabel54, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 930, -1));
 
+        jLabel10.setBackground(new java.awt.Color(153, 153, 153));
+        jLabel10.setText("jLabel10");
+        jLabel10.setOpaque(true);
+        jLabel10.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLabel10MouseClicked(evt);
+            }
+        });
+        jPanel5.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(450, 170, 30, 20));
+
         jtp.addTab("Seats", jPanel5);
 
         jPanel6.setBackground(new java.awt.Color(255, 255, 255));
@@ -1078,10 +1089,10 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         jPanel12.setBackground(new java.awt.Color(255, 255, 255));
 
-        jTextField7.setText("Search ");
-        jTextField7.addActionListener(new java.awt.event.ActionListener() {
+        tf_pay_search.setText("Search ");
+        tf_pay_search.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField7ActionPerformed(evt);
+                tf_pay_searchActionPerformed(evt);
             }
         });
 
@@ -1118,7 +1129,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                     .addGroup(jPanel12Layout.createSequentialGroup()
                         .addComponent(jLabel55)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(tf_pay_search, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -1127,7 +1138,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
             .addGroup(jPanel12Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel12Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jTextField7)
+                    .addComponent(tf_pay_search)
                     .addComponent(jLabel55, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 691, Short.MAX_VALUE)
@@ -1170,8 +1181,8 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jLabel39.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel39.setText("Balance");
 
-        jButton15.setBackground(new java.awt.Color(0, 153, 153));
-        jButton15.setText("Insert");
+        btn_pay_insert.setBackground(new java.awt.Color(0, 153, 153));
+        btn_pay_insert.setText("Insert");
 
         tf_pay_tno.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1193,7 +1204,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
             }
         });
 
-        cb_pay_type.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
         cb_pay_type.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Select" }));
 
         javax.swing.GroupLayout jPanel13Layout = new javax.swing.GroupLayout(jPanel13);
@@ -1231,7 +1241,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                                 .addGap(18, 18, 18)
                                 .addComponent(tf_pay_balance))
                             .addGroup(jPanel13Layout.createSequentialGroup()
-                                .addComponent(jButton15)
+                                .addComponent(btn_pay_insert)
                                 .addGap(64, 64, 64)
                                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                     .addComponent(jButton18, javax.swing.GroupLayout.DEFAULT_SIZE, 84, Short.MAX_VALUE)
@@ -1281,7 +1291,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addGap(31, 31, 31)
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jButton15)
+                        .addComponent(btn_pay_insert)
                         .addComponent(jButton17))
                     .addComponent(jButton16, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
@@ -1947,9 +1957,9 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btn_show_deleteActionPerformed
 
-    private void jTextField7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField7ActionPerformed
+    private void tf_pay_searchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tf_pay_searchActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField7ActionPerformed
+    }//GEN-LAST:event_tf_pay_searchActionPerformed
 
     private void tf_pay_tnoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tf_pay_tnoActionPerformed
         // TODO add your handling code here:
@@ -2238,6 +2248,10 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
     }//GEN-LAST:event_label_seat_showidPropertyChange
 
+    private void jLabel10MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel10MouseClicked
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jLabel10MouseClicked
+
     public static void main(String args[]) {
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
@@ -2262,6 +2276,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JButton btn_emp_update;
     private javax.swing.JButton btn_employee;
     private javax.swing.JButton btn_logout;
+    private javax.swing.JButton btn_pay_insert;
     private javax.swing.JButton btn_payment;
     private javax.swing.JButton btn_seat_add;
     private javax.swing.JButton btn_seat_book;
@@ -2282,7 +2297,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private com.toedter.calendar.JDateChooser dc_emp_dob;
     private com.toedter.calendar.JDateChooser dc_show_date;
     private javax.swing.JButton jButton10;
-    private javax.swing.JButton jButton15;
     private javax.swing.JButton jButton16;
     private javax.swing.JButton jButton17;
     private javax.swing.JButton jButton18;
@@ -2294,6 +2308,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JButton jButton9;
     private com.toedter.calendar.JCalendar jCalendar1;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
@@ -2372,7 +2387,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField25;
     private javax.swing.JTextField jTextField26;
     private javax.swing.JTextField jTextField27;
-    private javax.swing.JTextField jTextField7;
     private javax.swing.JTabbedPane jtp;
     private javax.swing.JLabel label_seat_price;
     private javax.swing.JLabel label_seat_showid;
@@ -2394,6 +2408,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JTextField tf_pay_balance;
     private javax.swing.JTextField tf_pay_date;
     private javax.swing.JTextField tf_pay_given;
+    private javax.swing.JTextField tf_pay_search;
     private javax.swing.JTextField tf_pay_showname;
     private javax.swing.JTextField tf_pay_tno;
     private javax.swing.JTextField tf_pay_total;

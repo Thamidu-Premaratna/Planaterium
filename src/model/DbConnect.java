@@ -36,6 +36,7 @@ public class DbConnect {
                 connection.close();
             }
         } catch (java.sql.SQLException e) {
+            e.printStackTrace();
         }
     }
 //------------------------------------------------------------------------------    
