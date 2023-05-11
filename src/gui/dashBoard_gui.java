@@ -8,8 +8,8 @@ import java.sql.ResultSet;
 import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Vector;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JOptionPane;
@@ -51,11 +51,21 @@ public class dashBoard_gui extends javax.swing.JFrame {
         return java.time.LocalDate.ofInstant(
                 dateToConvert.toInstant(), java.time.ZoneId.systemDefault());
     }
+//A method used to validate fields using RegEx
+    //Mobile number : (?:7|01|07)(?:0|1|2|4|5|6|7|8)\\d{7}$
+    //Pasword : ^(?=.*[A-Z])(?=.*[0-9])(?=.*[a-z])[A-Za-z0-9]{5,8}$ - 5 to 8 characters, aleast 1 upper case, 1 lowercase and 1 alphabet, 1 digit, rest are alphaneumerics
+    //Username : ^[a-zA-Z]{4,10}$ - 4 to 10 characters, no digits
 
+    public boolean validateRegex(String input, String regexPattern) {
+        Pattern pattern = Pattern.compile(regexPattern);
+        Matcher matcher = pattern.matcher(input);
+        return matcher.matches();
+    }
 //------------------------------------------------------------------------------    
 //                              Employee
 //------------------------------------------------------------------------------ 
 //Check if the employee exits (using employee-id), returns a boolean to the caller
+
     private boolean checkEmployeeExists(int empId) {
         boolean exits = false;
         try {
@@ -382,15 +392,13 @@ public class dashBoard_gui extends javax.swing.JFrame {
 //------------------------------------------------------------------------------    
 //                              Seat
 //------------------------------------------------------------------------------
-    
+
 //------------------------------------------------------------------------------    
 //                              Payment
 //------------------------------------------------------------------------------ 
-    
 //------------------------------------------------------------------------------    
 //                              Dashboard constructors
 //------------------------------------------------------------------------------
-
     public dashBoard_gui() {
         initComponents();
     }
@@ -623,7 +631,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        jPanel1.add(jPanel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1530, 40));
+        jPanel1.add(jPanel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1530, 30));
 
         jPanel2.setBackground(new java.awt.Color(255, 255, 255));
 
@@ -1743,7 +1751,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         jtp.addTab("Calendar", jPanel20);
 
-        jPanel1.add(jtp, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 40, 1350, 780));
+        jPanel1.add(jtp, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 30, 1350, 780));
 
         jPanel9.setBackground(new java.awt.Color(0, 153, 153));
 
@@ -2059,13 +2067,14 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
     private void btn_emp_addActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_addActionPerformed
         //Regex for validating mobile number (Sri lanka only)
-        String telno_regex = "/^(?:0|94|\\+94)?(?:(11|21|23|24|25|26|27|31|32|33|34|35|36|37|38|41|45|47|51|52|54|55|57|63|65|66|67|81|912)(0|2|3|4|5|7|9)|7(0|1|2|4|5|6|7|8)\\d)\\d{6}$/";
-        Pattern pattern = Pattern.compile(telno_regex);
+        //Mobile number : (?:7|01|07)(?:0|1|2|4|5|6|7|8)\\d{7}$
+        String telno_regex = "^(?:7|01|07)(?:0|1|2|4|5|6|7|8)\\\\d{7}$";
+
         //EmployeeId is auto matically generated!
         //Check if all fields are filled - Validations, Except the DOB
         if (tf_emp_fname.getText().isEmpty() || tf_emp_lname.getText().isEmpty() || tf_emp_telno.getText().isEmpty() || tf_emp_address.getText().isEmpty()) {
             JOptionPane.showMessageDialog(this, "All fields except DOB are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
-        } else if (!pattern.matcher(tf_emp_telno.getText()).matches()) {
+        } else if (!validateRegex(tf_emp_telno.getText(), telno_regex)) {
             JOptionPane.showMessageDialog(this, "Please enter valid mobile number (Sri lanka)!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else if (cb_emp_role.getSelectedItem().toString().equals("Select")) {
             JOptionPane.showMessageDialog(this, "Please select a role!", "Warning", JOptionPane.WARNING_MESSAGE);
@@ -2097,6 +2106,10 @@ public class dashBoard_gui extends javax.swing.JFrame {
     }//GEN-LAST:event_btn_emp_clearActionPerformed
 
     private void btn_emp_updateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_updateActionPerformed
+        //Regex for validating mobile number (Sri lanka only)
+        //Mobile number : (?:7|01|07)(?:0|1|2|4|5|6|7|8)\\d{7}$
+        String telno_regex = "^(?:7|01|07)(?:0|1|2|4|5|6|7|8)\\\\d{7}$";
+
         //Check if the user already exists
         if (tf_emp_id.getText().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please select a User!", "Warning", JOptionPane.WARNING_MESSAGE);
@@ -2106,6 +2119,8 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 //Check if all fields are filled - Validations, Except the DOB
                 if (tf_emp_fname.getText().isEmpty() || tf_emp_lname.getText().isEmpty() || tf_emp_telno.getText().isEmpty() || tf_emp_address.getText().isEmpty()) {
                     JOptionPane.showMessageDialog(this, "All fields except DOB are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
+                } else if (!validateRegex(tf_emp_telno.getText(), telno_regex)) {
+                    JOptionPane.showMessageDialog(this, "Please enter valid mobile number (Sri lanka)!", "Warning", JOptionPane.WARNING_MESSAGE);
                 } else if (cb_emp_role.getSelectedItem().toString().equals("Select")) {
                     JOptionPane.showMessageDialog(this, "Please select a role!", "Warning", JOptionPane.WARNING_MESSAGE);
                 } else if (cb_emp_role.getSelectedItem().toString().equals("Admin") && currentUserRoleId != 1) { //User currently logged in should be an Admin (roleId = 1)
