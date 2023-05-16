@@ -8,7 +8,7 @@ public class DbConnect {
 
 //Variales for the class (to initiate a database connection)
     public static Connection connection; // Public access
-    private static final String DATABASE = "planaterium";
+    private static final String DATABASE = "planaterium_final";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "1234";
 //------------------------------------------------------------------------------    
