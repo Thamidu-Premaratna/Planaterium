@@ -242,6 +242,8 @@ public class login_gui extends javax.swing.JFrame {
 
                     if (user_role.equals("Admin")) {
                         new dashBoard_gui(2, empId, username, uRoleId).setVisible(true);
+                    } else if (user_role.equals("Manager")) {
+                        new dashBoard_gui(3, empId, username, uRoleId).setVisible(true);
                     } else {
                         new dashBoard_gui(1, empId, username, uRoleId).setVisible(true);
                     }

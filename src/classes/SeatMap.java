@@ -1,37 +1,46 @@
 package classes;
 
+import gui.dashBoard_gui;
+import java.awt.List;
 import java.util.HashMap;
 import java.util.Map;
 import model.DbConnect;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 
 public class SeatMap {
 
     private final Map<String, Boolean> seatMap;
+    private final String[] seatArr;
+    private dashBoard_gui dash;
 
-    public SeatMap(String[] seatArr) {
+    public SeatMap(int showId, dashBoard_gui dash) {
         seatMap = new HashMap<>();
-        initSeatMap(seatArr);
-        /*
-        Method for printing the Hash map into console (testing)
         
+        this.dash = dash;
+        
+        this.seatArr = this.dash.getSeatArr();
+        initSeatMap(this.seatArr);
+        setSeatMap(showId);
+
+        //Method for printing the Hash map into console (testing)
+        /*
         for (Map.Entry<String, Boolean> entry : seatMap.entrySet()) {
             System.out.println(entry.getKey() + ": " + entry.getValue());
-       }
-        System.out.println(seatMap.get("A1"));
+        }
          */
     }
 
     //Initialize seat Map. All seats will be by default "non-occupied"
     private void initSeatMap(String[] seatArr) {
         for (String seatNo : seatArr) {
-            seatMap.put(seatNo, Boolean.TRUE);
+            this.seatMap.put(seatNo, Boolean.TRUE);
         }
     }
 
-    //Set the seat map with information, by using the "show_id" to retrieve information about a specific show ans its seat mapping
-    public void setSeatMap(int showId) {
+    //Set the seat map with information, by using the "show_id" to retrieve information about a specific show and its seat mapping
+    public final void setSeatMap(int showId) {
         try {
             /*
             CREATE VIEW seat_map AS
@@ -49,7 +58,7 @@ public class SeatMap {
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
-                seatMap.put(rs.getString("seat_no"), Boolean.FALSE);
+                this.seatMap.put(rs.getString("seat_no"), Boolean.FALSE);
             }
 
             DbConnect.closeConnection();
@@ -58,34 +67,42 @@ public class SeatMap {
         }
     }
 
-    //The Hash Map will store the seat number and availability of the seat (boolean value) as a key value pair.
-    public void addSeat(String seatNumber, Boolean isAvailable) {
-        seatMap.put(seatNumber, isAvailable);
+    public SeatMap getSeatMap() {
+        return this;
     }
 
-    public Map<String, Boolean> getSeat() {
-        return seatMap;
+    //The Hash Map will store the seat number and availability of the seat (boolean value) as a key value pair.
+    public void addSeat(String seatNumber, Boolean isAvailable) {
+        this.seatMap.put(seatNumber, isAvailable);
     }
 
     public void toggleAvailability(String seatNumber) {
-        if (seatMap.get(seatNumber)) { //Checks if the seat is occupied or not (key the value associated with the "key" (seaNumber) )
-            seatMap.put(seatNumber, Boolean.FALSE); //Change "isAvailable" = False
+        if (this.seatMap.get(seatNumber)) { //Checks if the seat is occupied or not (key the value associated with the "key" (seaNumber) )
+            this.seatMap.put(seatNumber, Boolean.FALSE); //Change "isAvailable" = False
         } else {// isAvailable = False (seatocuupied)
-            seatMap.put(seatNumber, Boolean.TRUE);   //Change "isAvailable" = True
+            this.seatMap.put(seatNumber, Boolean.TRUE);   //Change "isAvailable" = True
         }
     }
 
     //Returns true or false (seat availability)
     public Boolean getAvailability(String seatNumber) {
-        return seatMap.get(seatNumber); //Sends the "value" (Boolean) related to the "key" (seatNumber)
+        return this.seatMap.get(seatNumber); //Sends the "value" (Boolean) related to the "key" (seatNumber)
     }
-    
+
     //Return a seat array with seats that are occupied
-    public String[] getOccupiedSeats(){
-        String[] seatArr = {""};
-        for (Map.Entry<String, Boolean> entry : seatMap.entrySet()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue());
-       }
-        return seatArr;
+    public String[] getOccupiedSeats() {
+        String[] keysArray = null;
+        if (this.seatMap != null) {
+            // Get keys with value "false" into an array
+            ArrayList<String> keysWithFalseValue = new ArrayList<>();
+            for (Map.Entry<String, Boolean> entry : this.seatMap.entrySet()) {
+                if (!entry.getValue()) {  // Value is false
+                    keysWithFalseValue.add(entry.getKey());
+                }
+            }
+
+            keysArray = keysWithFalseValue.toArray(String[]::new);
+        }
+        return keysArray;
     }
 }

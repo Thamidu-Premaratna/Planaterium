@@ -1,5 +1,6 @@
 package gui;
 
+import classes.SeatMap;
 import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.Color;
 import java.sql.PreparedStatement;
@@ -12,6 +13,11 @@ import javax.swing.table.DefaultTableModel;
 import model.DbConnect;
 
 public class show_select_gui extends javax.swing.JFrame {
+
+//Private variables
+    private dashBoard_gui dashboard;
+    private SeatMap seatMap;
+    private String[] seatArr;
 
 //Load the show table dynamically by retrieving them from the database
     private void loadShowTable() {
@@ -37,9 +43,10 @@ public class show_select_gui extends javax.swing.JFrame {
 //Load the show table dynamically according to a 'search criteria' by retrieving them from the database
     private void loadShowTable(String searchTerm) {
         try {
-            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `show` WHERE `show_id` LIKE ? OR `show_name` LIKE ?");
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `show` WHERE `show_id` LIKE ? OR `show_name` LIKE ? OR `show_date` LIKE ?");
             stmt.setString(1, searchTerm + "%");
             stmt.setString(2, searchTerm + "%");
+            stmt.setString(3, searchTerm + "%");
             ResultSet rs = stmt.executeQuery();
             DefaultTableModel dtm = (DefaultTableModel) table_extrashow.getModel();
             dtm.setRowCount(0);
@@ -58,10 +65,6 @@ public class show_select_gui extends javax.swing.JFrame {
 
     }
 
-    //Variable to hold the dashboard_gui instance that will be sent as an argument.
-    //This will be used to access objects within that dashboard_gui instance
-    private dashBoard_gui dashboard;
-
     public show_select_gui() {
         initComponents();
         loadShowTable();
@@ -69,6 +72,8 @@ public class show_select_gui extends javax.swing.JFrame {
 
     public show_select_gui(dashBoard_gui dash) {
         this.dashboard = dash;
+        this.seatMap = dashboard.getSeatMap();
+        this.seatArr = dashboard.getSeatArr();
         initComponents();
         loadShowTable();
     }
@@ -226,7 +231,10 @@ public class show_select_gui extends javax.swing.JFrame {
     private void btn_extrashow_selectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_extrashow_selectActionPerformed
         int r = table_extrashow.getSelectedRow();
         if (r != -1) {
-            dashboard.label_book_showid.setText(table_extrashow.getValueAt(r, 0).toString());
+            String showId = table_extrashow.getValueAt(r, 0).toString();
+            dashboard.label_book_showid.setText(showId);
+            dashboard.setSeatMap(new SeatMap(Integer.parseInt(showId), dashboard));// Create new seatMap object replacing the previous one
+            dashboard.initSeatAvailability(); //Edit the seat colors to the selected show
             this.dispose();
         }
     }//GEN-LAST:event_btn_extrashow_selectActionPerformed
@@ -243,7 +251,10 @@ public class show_select_gui extends javax.swing.JFrame {
         if (evt.getClickCount() == 2) {
             int r = table_extrashow.getSelectedRow();
             if (r != -1) {
-                dashboard.label_book_showid.setText(table_extrashow.getValueAt(r, 0).toString());
+                String showId = table_extrashow.getValueAt(r, 0).toString();
+                dashboard.label_book_showid.setText(showId);
+                dashboard.setSeatMap(new SeatMap(Integer.parseInt(showId), dashboard));// Create new seatMap object replacing the previous one
+                dashboard.initSeatAvailability(); //Edit the seat colors to the selected show
                 this.dispose();
             }
         }

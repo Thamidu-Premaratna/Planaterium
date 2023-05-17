@@ -19,11 +19,15 @@ import lu.tudor.santec.jtimechooser.JTimeChooser;
 
 //Custom classes imports
 import classes.CircularButton;
-import classes.RegEx;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import model.DbConnect;
 import classes.SeatMap;
+import java.awt.Component;
+import java.util.ArrayList;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 
 public class dashBoard_gui extends javax.swing.JFrame {
 
@@ -32,15 +36,37 @@ public class dashBoard_gui extends javax.swing.JFrame {
 //------------------------------------------------------------------------------ 
     private int currentUserRoleId;
     private int currentEmployeeId;
+    private int labelLoopCount;
     private SeatMap seatMap;
+    private JPanel seatPanel; //The panel that holds the seat buttons in the dashboard_gui
 
     //Arrays that will be used to keep the seat information
-    private String[] seatArr = {"A1", "A2", "A3", "A4", "A5", "A6", "A7"}; //Seats available
+    private String[] seatArr; //Seats available
     private String[] choosenSeatArr; //Seats choosen for Booking
+
+    //Keeps an array of JLabel objects that exist in the dashboard
+    private JLabel[] labelArr;
 
 //------------------------------------------------------------------------------    
 //                              Common methods
 //------------------------------------------------------------------------------ 
+//Getters and setters for some private variables
+    public SeatMap getSeatMap() {
+        return this.seatMap;
+    }
+
+    public void setSeatMap(SeatMap seatMap) {
+        this.seatMap = seatMap;
+    }
+
+    public String[] getSeatArr() {
+        return this.seatArr;
+    }
+
+    public void setSeatArr(String[] seatArr) {
+        this.seatArr = seatArr;
+    }
+
 //Method to get the sql.Date from a JDateChooser    
     private java.sql.Date getSQLDate(JDateChooser chooser) {
         java.util.Date utilDate = chooser.getDate();
@@ -73,11 +99,11 @@ public class dashBoard_gui extends javax.swing.JFrame {
         Matcher matcher = pattern.matcher(input);
         return matcher.matches();
     }
+
 //------------------------------------------------------------------------------    
 //                              Employee
 //------------------------------------------------------------------------------ 
 //Check if the employee exits (using employee-id), returns a boolean to the caller
-
     private boolean checkEmployeeExists(int empId) {
         boolean exits = false;
         try {
@@ -401,27 +427,98 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
         return rowCount; //The ideal row count should be 2, but there could be instances where tickets with the show id will not exist then the row count will be 1
     }
+
+    //Method to get the showId array that will have them listed in the order of first occurence. (the show that will be closest (date and time) to be played)
+    private ArrayList<Integer> getShowIdArray() {
+        ArrayList<Integer> showIdArr = null;
+        try {
+            String query = """
+                           SELECT *
+                           FROM planaterium_final.show
+                           WHERE show_date >= CURDATE()
+                           ORDER BY 
+                               CASE
+                                   WHEN show_date = CURDATE() THEN 0
+                                   ELSE TIMESTAMPDIFF(SECOND, CURDATE(), show_date)
+                               END,
+                               start_time
+                               LIMIT 0,6;""";
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement(query);
+            ResultSet rs = stmt.executeQuery();
+            showIdArr = new ArrayList<>();
+            while (rs.next()) {
+                showIdArr.add(Integer.valueOf(rs.getString("show_id")));
+            }
+            DbConnect.closeConnection();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return showIdArr;
+    }
 //------------------------------------------------------------------------------    
 //                              Seat Booking - (Dashboard)
 //------------------------------------------------------------------------------
 
 //Clear some fields in the Dashboard (Seat booking)
-    private void clearSeatFields(){
+    private void clearSeatFields() {
         label_book_total.setText("0.0");
         label_book_balance.setText("0.0");
         tf_book_payment.setText("");
-        DefaultTableModel dtm = (DefaultTableModel)table_book.getModel();
+        DefaultTableModel dtm = (DefaultTableModel) table_book.getModel();
         dtm.setRowCount(0);
     }
+//Reset btn colours
 
-//Seat the seating color (According to the seat availability)
-    private void initSeatAvailability(){
-        if(seatMap != null){ //There exists a seat mapping
-            
+    private void resetButtonColors() {
+        if (this.seatArr.length != 0) {
+            for (JButton btn : getButtonArray(this.seatArr)) {
+                btn.setBackground(new Color(204, 255, 204)); //green
+            }
         }
     }
-    
+//Set the seating color (According to the seat availability)
+
+    public final void initSeatAvailability() {
+        if (this.seatMap != null) { //There exists seat map object and occupied seats array
+            if (this.seatMap.getOccupiedSeats().length != 0) {
+                System.out.println("Occupied seats length: "+this.seatMap.getOccupiedSeats().length);
+                //using the occupied seats JButton Array List, change the colors of the buttons to red.
+                String[] occupiedSeatsArr = this.seatMap.getOccupiedSeats();
+                for (JButton btn : getButtonArray(occupiedSeatsArr)) {
+                    btn.setBackground(new Color(255, 0, 102));
+                }
+            } else {
+                resetButtonColors();
+            }
+        }
+    }
+
+//Method to retrieve Jbutton array using buttons name
+    private JButton getButtonByText(JPanel panel, String buttonText) {
+        Component[] components = panel.getComponents();
+        for (Component component : components) {
+            if (component instanceof JButton button) {
+                if (button.getText().equals(buttonText)) {
+                    return button;
+                }
+            }
+        }
+        return null;
+    }
+
+    //Get arraylist of Jbuttons (occupied)
+    private ArrayList<JButton> getButtonArray(String[] occupiedSeatsArr) {
+        ArrayList<JButton> btnArr = new ArrayList<>();
+        if (occupiedSeatsArr.length != 0) {
+            //Loop thorugh occupied seat array and add the respective JButton object into the Array List
+            for (String seatNumber : occupiedSeatsArr) {
+                btnArr.add(getButtonByText(this.seatPanel, seatNumber));
+            }
+        }
+        return btnArr;
+    }
 //Load the seat types for the combo box
+
     private void loadSeatType() {
         try {
             PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `seat_type`");
@@ -516,10 +613,10 @@ public class dashBoard_gui extends javax.swing.JFrame {
     }
 
 //Check if the seat is already inserted into the booking - list table (in order to avoid adding the same seat again)
-    private Boolean checkSeatDupplicateEntry(String seatNo){
-        DefaultTableModel dtm = (DefaultTableModel)table_book.getModel();
+    private Boolean checkSeatDupplicateEntry(String seatNo) {
+        DefaultTableModel dtm = (DefaultTableModel) table_book.getModel();
         for (int row = 0; row < dtm.getRowCount(); row++) {
-            if(dtm.getValueAt(row, 0).toString().equals(seatNo)){
+            if (dtm.getValueAt(row, 0).toString().equals(seatNo)) {
                 return Boolean.TRUE;
             }
         }
@@ -679,17 +776,64 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
         return rowCount; //The ideal row count should be 2, but there could be instances where tickets with the show id will not exist then the row count will be 1
     }
+//------------------------------------------------------------------------------    
+//                              Dashboard
+//------------------------------------------------------------------------------
+    //Function to retrieve the img url related to a show_id
 
+    private String getImageUrl(int showId) {
+        String path = "/images/imports/default.png";
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `show` WHERE `show_id` = ?");
+            stmt.setInt(1, showId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("show_img");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return path;
+    }
+
+    //Function to set the path of image to a label as an icon
+    private void setImageUrl(String path, JLabel label) {
+        label.setIcon(new javax.swing.ImageIcon(getClass().getResource(path)));
+    }
+
+    //Function to set the icon images to the dashboard labels
+    private void setDashboardImages() {
+        labelLoopCount = 0;
+        for (int showId : getShowIdArray()) {
+            setImageUrl(getImageUrl(showId), labelArr[labelLoopCount]);
+            labelLoopCount++;
+            if (labelLoopCount == 6) { // To stop the looping since there are only 6 labels. (ArrayIndexOutOfBounds Error)
+                labelLoopCount = 0;
+                break;
+            }
+        }
+    }
 //------------------------------------------------------------------------------    
 //                              Dashboard constructors
 //------------------------------------------------------------------------------
+
     public dashBoard_gui() {
+        this.seatArr = new String[]{"A1", "A2", "A3", "A4", "A5", "A6", "A7"};
+        this.labelArr = new JLabel[]{label_dashboard_1, label_dashboard_2, label_dashboard_3, label_dashboard_4, label_dashboard_5, label_dashboard_6};
         initComponents();
     }
 
 //Access control (Depending on user-role)
     public dashBoard_gui(int loginType, int currentEmployeeId, String uname, int currentUserRoleId) {
         initComponents();
+        //Initializing the private arrays created
+        this.seatArr = new String[]{"A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12", "A13", "A14"};
+        this.labelArr = new JLabel[]{label_dashboard_1, label_dashboard_2, label_dashboard_3, label_dashboard_4, label_dashboard_5, label_dashboard_6};
+
+        //initializing other private varaibles
+        this.labelLoopCount = 0;
+        this.seatPanel = seats_panel; //Set the seat panel object to a private variable for ease-of-use
+
         //Custom Action-Listerners
         table_book.getModel().addTableModelListener(new TableModelListener() {
             @Override
@@ -705,26 +849,34 @@ public class dashBoard_gui extends javax.swing.JFrame {
         loadShowTable();
         loadSeatType();
         loadPaymentType();
+        setDashboardImages();
+
         //Set values to the private variables in this instance of the dashboard (session)
         this.currentEmployeeId = currentEmployeeId;
         this.currentUserRoleId = currentUserRoleId;
 
-        seatMap = new SeatMap(seatArr); // Creating a new seat map object, that has the Hash Map for the seating information
+        //Creating a seatMap for the show that is first in line to be viewed.
+        this.seatMap = new SeatMap(getShowIdArray().get(0), this); // Creating a new seat map object, that has the Hash Map for the seating information
+        initSeatAvailability(); //Seat color change for occupied seats, since we have a seatMap object created
 
         label_uname.setText(uname);
         tf_emp_id.setEnabled(false);
         tf_show_id.setEditable(false);
 
         switch (loginType) {
-            case 1 -> { // Receptionist logged in, initializations
+            case 1 -> { // Receptionist logged in, initializations. can't see payment history and employee tabs
                 btn_employee.setEnabled(false);
                 btn_payment.setEnabled(false);
                 jtp.setEnabledAt(4, false);
                 jtp.setEnabledAt(3, false);
             }
-            case 2 -> { //Administrator logged in, initialiations
+            case 2 -> { //Administrator logged in, initialiations. can't see payment history tab
                 loadEmployeeTable();
                 loadEmployeeRoles();
+                btn_payment.setEnabled(false);
+                jtp.setEnabledAt(3, false);
+            }
+            case 3 -> { // Manager logged in. can see all tabs
                 loadPaymentHistory();
                 loadAdminPaymentType();
                 tf_pay_id.setEnabled(false);
@@ -747,15 +899,15 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jSeparator1 = new javax.swing.JSeparator();
         jtp = new javax.swing.JTabbedPane();
         jPanel2 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
+        label_dashboard_1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
-        jLabel5 = new javax.swing.JLabel();
-        jLabel9 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
-        jLabel6 = new javax.swing.JLabel();
-        jLabel7 = new javax.swing.JLabel();
-        jPanel5 = new javax.swing.JPanel();
+        label_dashboard_2 = new javax.swing.JLabel();
+        label_dashboard_3 = new javax.swing.JLabel();
+        label_dashboard_5 = new javax.swing.JLabel();
+        label_dashboard_6 = new javax.swing.JLabel();
+        label_dashboard_4 = new javax.swing.JLabel();
+        seats_panel = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
         jLabel8 = new javax.swing.JLabel();
         jLabel14 = new javax.swing.JLabel();
@@ -785,6 +937,13 @@ public class dashBoard_gui extends javax.swing.JFrame {
         btn_a6 = new CircularButton("");
         btn_a7 = new CircularButton("");
         btn_a3 = new CircularButton("");
+        btn_a8 = new CircularButton("");
+        btn_a9 = new CircularButton("");
+        btn_a10 = new CircularButton("");
+        btn_a11 = new CircularButton("");
+        btn_a12 = new CircularButton("");
+        btn_a13 = new CircularButton("");
+        btn_a14 = new CircularButton("");
         jLabel54 = new javax.swing.JLabel();
         jPanel6 = new javax.swing.JPanel();
         jPanel7 = new javax.swing.JPanel();
@@ -859,36 +1018,12 @@ public class dashBoard_gui extends javax.swing.JFrame {
         btn_emp_status = new javax.swing.JButton();
         cb_emp_role = new javax.swing.JComboBox<>();
         dc_emp_dob = new com.toedter.calendar.JDateChooser();
-        jPanel15 = new javax.swing.JPanel();
-        jPanel18 = new javax.swing.JPanel();
-        jLabel48 = new javax.swing.JLabel();
-        jLabel49 = new javax.swing.JLabel();
-        jLabel50 = new javax.swing.JLabel();
-        jLabel51 = new javax.swing.JLabel();
-        jLabel52 = new javax.swing.JLabel();
-        jLabel53 = new javax.swing.JLabel();
-        jTextField23 = new javax.swing.JTextField();
-        jTextField24 = new javax.swing.JTextField();
-        jTextField25 = new javax.swing.JTextField();
-        jTextField26 = new javax.swing.JTextField();
-        jTextField27 = new javax.swing.JTextField();
-        jButton24 = new javax.swing.JButton();
-        jButton25 = new javax.swing.JButton();
-        jButton26 = new javax.swing.JButton();
-        jButton27 = new javax.swing.JButton();
-        jPanel19 = new javax.swing.JPanel();
-        jScrollPane4 = new javax.swing.JScrollPane();
-        table_edit_show = new javax.swing.JTable();
-        jPanel20 = new javax.swing.JPanel();
-        jCalendar1 = new com.toedter.calendar.JCalendar();
         jPanel9 = new javax.swing.JPanel();
         btn_dashboard = new javax.swing.JButton();
         btn_show = new javax.swing.JButton();
         btn_seats = new javax.swing.JButton();
         btn_employee = new javax.swing.JButton();
         btn_payment = new javax.swing.JButton();
-        btn_editscreen = new javax.swing.JButton();
-        btn_calender = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Planaterium App v1.0");
@@ -942,8 +1077,9 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         jPanel2.setBackground(new java.awt.Color(255, 255, 255));
 
-        jLabel1.setText("jLabel1");
-        jLabel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        label_dashboard_1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        label_dashboard_1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/imports/default.png"))); // NOI18N
+        label_dashboard_1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
         jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel2.setText("Now Showing");
@@ -951,20 +1087,21 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jLabel3.setFont(new java.awt.Font("Segoe UI", 3, 12)); // NOI18N
         jLabel3.setText("Up comming");
 
-        jLabel5.setText("jLabel4");
-        jLabel5.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        label_dashboard_2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        label_dashboard_2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/imports/5-scaled.jpg"))); // NOI18N
+        label_dashboard_2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        jLabel9.setText("jLabel4");
-        jLabel9.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        label_dashboard_3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        label_dashboard_3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        jLabel4.setText("jLabel4");
-        jLabel4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        label_dashboard_5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        label_dashboard_5.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        jLabel6.setText("jLabel4");
-        jLabel6.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        label_dashboard_6.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        label_dashboard_6.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        jLabel7.setText("jLabel4");
-        jLabel7.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        label_dashboard_4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        label_dashboard_4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -976,21 +1113,23 @@ public class dashBoard_gui extends javax.swing.JFrame {
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 183, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 324, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(179, 179, 179)
+                            .addComponent(label_dashboard_1, javax.swing.GroupLayout.PREFERRED_SIZE, 350, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 267, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(203, 203, 203)
+                                .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 751, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanel2Layout.createSequentialGroup()
+                                .addGap(190, 190, 190)
+                                .addComponent(label_dashboard_2, javax.swing.GroupLayout.PREFERRED_SIZE, 280, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(81, 81, 81)
-                                .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, 267, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 751, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addComponent(label_dashboard_3, javax.swing.GroupLayout.PREFERRED_SIZE, 280, javax.swing.GroupLayout.PREFERRED_SIZE))))
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(label_dashboard_4, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(87, 87, 87)
-                        .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(label_dashboard_5, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(126, 126, 126)
-                        .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(81, Short.MAX_VALUE))
+                        .addComponent(label_dashboard_6, javax.swing.GroupLayout.PREFERRED_SIZE, 277, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1002,24 +1141,24 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addGap(15, 15, 15)
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 332, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(label_dashboard_1, javax.swing.GroupLayout.PREFERRED_SIZE, 350, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel2Layout.createSequentialGroup()
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 248, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel9, javax.swing.GroupLayout.PREFERRED_SIZE, 248, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                            .addComponent(label_dashboard_2, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(label_dashboard_3, javax.swing.GroupLayout.PREFERRED_SIZE, 300, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addGap(103, 103, 103)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, 204, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 204, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 204, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(58, Short.MAX_VALUE))
+                    .addComponent(label_dashboard_4, javax.swing.GroupLayout.PREFERRED_SIZE, 204, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(label_dashboard_5, javax.swing.GroupLayout.PREFERRED_SIZE, 204, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(label_dashboard_6, javax.swing.GroupLayout.PREFERRED_SIZE, 204, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(37, Short.MAX_VALUE))
         );
 
         jtp.addTab("Dash board", jPanel2);
 
-        jPanel5.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        seats_panel.setBackground(new java.awt.Color(255, 255, 255));
+        seats_panel.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jPanel4.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
@@ -1102,13 +1241,13 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_book_clearActionPerformed(evt);
             }
         });
-        jPanel4.add(btn_book_clear, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 670, 80, 30));
+        jPanel4.add(btn_book_clear, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 660, 80, 30));
 
         btn_book.setBackground(new java.awt.Color(0, 204, 102));
         btn_book.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
         btn_book.setForeground(new java.awt.Color(255, 255, 255));
         btn_book.setText("BOOK");
-        jPanel4.add(btn_book, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 670, 260, 70));
+        jPanel4.add(btn_book, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 660, 260, 70));
 
         btn_book_receipt.setBackground(new java.awt.Color(0, 102, 153));
         btn_book_receipt.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
@@ -1119,7 +1258,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_book_receiptActionPerformed(evt);
             }
         });
-        jPanel4.add(btn_book_receipt, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 710, 80, 30));
+        jPanel4.add(btn_book_receipt, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 700, 80, 30));
 
         jPanel21.setBorder(javax.swing.BorderFactory.createTitledBorder("Summary"));
 
@@ -1204,7 +1343,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         });
         jPanel4.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(295, 450, 110, 30));
 
-        jPanel5.add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(910, 0, 440, 750));
+        seats_panel.add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(910, 0, 440, 750));
 
         btn_a4.setBackground(new java.awt.Color(204, 255, 204));
         btn_a4.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
@@ -1214,7 +1353,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_a4ActionPerformed(evt);
             }
         });
-        jPanel5.add(btn_a4, new org.netbeans.lib.awtextra.AbsoluteConstraints(440, 160, 40, 40));
+        seats_panel.add(btn_a4, new org.netbeans.lib.awtextra.AbsoluteConstraints(430, 160, 50, 50));
 
         btn_a2.setBackground(new java.awt.Color(204, 255, 204));
         btn_a2.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
@@ -1224,7 +1363,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_a2ActionPerformed(evt);
             }
         });
-        jPanel5.add(btn_a2, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 210, 40, 40));
+        seats_panel.add(btn_a2, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 200, 50, 50));
 
         btn_a1.setBackground(new java.awt.Color(204, 255, 204));
         btn_a1.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
@@ -1234,7 +1373,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_a1ActionPerformed(evt);
             }
         });
-        jPanel5.add(btn_a1, new org.netbeans.lib.awtextra.AbsoluteConstraints(270, 260, 40, 40));
+        seats_panel.add(btn_a1, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 250, 50, 50));
 
         btn_a5.setBackground(new java.awt.Color(204, 255, 204));
         btn_a5.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
@@ -1244,7 +1383,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_a5ActionPerformed(evt);
             }
         });
-        jPanel5.add(btn_a5, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 170, 40, 40));
+        seats_panel.add(btn_a5, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 170, 50, 50));
 
         btn_a6.setBackground(new java.awt.Color(204, 255, 204));
         btn_a6.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
@@ -1254,7 +1393,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_a6ActionPerformed(evt);
             }
         });
-        jPanel5.add(btn_a6, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 200, 40, 40));
+        seats_panel.add(btn_a6, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 200, 50, 50));
 
         btn_a7.setBackground(new java.awt.Color(204, 255, 204));
         btn_a7.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
@@ -1264,7 +1403,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_a7ActionPerformed(evt);
             }
         });
-        jPanel5.add(btn_a7, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 260, 40, 40));
+        seats_panel.add(btn_a7, new org.netbeans.lib.awtextra.AbsoluteConstraints(600, 250, 50, 50));
 
         btn_a3.setBackground(new java.awt.Color(204, 255, 204));
         btn_a3.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
@@ -1274,16 +1413,86 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_a3ActionPerformed(evt);
             }
         });
-        jPanel5.add(btn_a3, new org.netbeans.lib.awtextra.AbsoluteConstraints(370, 180, 40, 40));
+        seats_panel.add(btn_a3, new org.netbeans.lib.awtextra.AbsoluteConstraints(360, 170, 50, 50));
+
+        btn_a8.setBackground(new java.awt.Color(204, 255, 204));
+        btn_a8.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
+        btn_a8.setText("A8");
+        btn_a8.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_a8ActionPerformed(evt);
+            }
+        });
+        seats_panel.add(btn_a8, new org.netbeans.lib.awtextra.AbsoluteConstraints(600, 440, 50, 50));
+
+        btn_a9.setBackground(new java.awt.Color(204, 255, 204));
+        btn_a9.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
+        btn_a9.setText("A9");
+        btn_a9.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_a9ActionPerformed(evt);
+            }
+        });
+        seats_panel.add(btn_a9, new org.netbeans.lib.awtextra.AbsoluteConstraints(560, 490, 50, 50));
+
+        btn_a10.setBackground(new java.awt.Color(204, 255, 204));
+        btn_a10.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
+        btn_a10.setText("A10");
+        btn_a10.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_a10ActionPerformed(evt);
+            }
+        });
+        seats_panel.add(btn_a10, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 530, 50, 50));
+
+        btn_a11.setBackground(new java.awt.Color(204, 255, 204));
+        btn_a11.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
+        btn_a11.setText("A11");
+        btn_a11.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_a11ActionPerformed(evt);
+            }
+        });
+        seats_panel.add(btn_a11, new org.netbeans.lib.awtextra.AbsoluteConstraints(430, 540, 50, 50));
+
+        btn_a12.setBackground(new java.awt.Color(204, 255, 204));
+        btn_a12.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
+        btn_a12.setText("A12");
+        btn_a12.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_a12ActionPerformed(evt);
+            }
+        });
+        seats_panel.add(btn_a12, new org.netbeans.lib.awtextra.AbsoluteConstraints(370, 530, 50, 50));
+
+        btn_a13.setBackground(new java.awt.Color(204, 255, 204));
+        btn_a13.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
+        btn_a13.setText("A13");
+        btn_a13.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_a13ActionPerformed(evt);
+            }
+        });
+        seats_panel.add(btn_a13, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 490, 50, 50));
+
+        btn_a14.setBackground(new java.awt.Color(204, 255, 204));
+        btn_a14.setFont(new java.awt.Font("Segoe UI", 1, 8)); // NOI18N
+        btn_a14.setText("A14");
+        btn_a14.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_a14ActionPerformed(evt);
+            }
+        });
+        seats_panel.add(btn_a14, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 440, 50, 50));
 
         jLabel54.setBackground(new java.awt.Color(255, 255, 255));
         jLabel54.setForeground(new java.awt.Color(255, 255, 255));
         jLabel54.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel54.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/seats.png"))); // NOI18N
         jLabel54.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jPanel5.add(jLabel54, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 10, 910, -1));
+        seats_panel.add(jLabel54, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 10, 910, -1));
 
-        jtp.addTab("Seats", jPanel5);
+        jtp.addTab("Seats", seats_panel);
 
         jPanel6.setBackground(new java.awt.Color(255, 255, 255));
 
@@ -2036,195 +2245,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         jtp.addTab("Employee", jPanel14);
 
-        jPanel15.setBackground(new java.awt.Color(255, 255, 255));
-
-        jPanel18.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
-
-        jLabel48.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
-        jLabel48.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel48.setText("Edit Screening");
-
-        jLabel49.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel49.setText("Show Name");
-
-        jLabel50.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel50.setText("Employee");
-
-        jLabel51.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel51.setText("Date");
-
-        jLabel52.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel52.setText("Languadge");
-
-        jLabel53.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
-        jLabel53.setText("Status");
-
-        jButton24.setBackground(new java.awt.Color(0, 153, 153));
-        jButton24.setText("Insert");
-
-        jButton25.setBackground(new java.awt.Color(0, 153, 153));
-        jButton25.setText("edit");
-
-        jButton26.setBackground(new java.awt.Color(0, 153, 153));
-        jButton26.setText("clear");
-
-        jButton27.setBackground(new java.awt.Color(0, 153, 153));
-        jButton27.setText("Delete");
-
-        javax.swing.GroupLayout jPanel18Layout = new javax.swing.GroupLayout(jPanel18);
-        jPanel18.setLayout(jPanel18Layout);
-        jPanel18Layout.setHorizontalGroup(
-            jPanel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel18Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel48, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(jPanel18Layout.createSequentialGroup()
-                        .addGroup(jPanel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(jPanel18Layout.createSequentialGroup()
-                                .addComponent(jButton24)
-                                .addGap(67, 67, 67)
-                                .addGroup(jPanel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(jPanel18Layout.createSequentialGroup()
-                                        .addComponent(jButton25, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addComponent(jButton27))
-                                    .addGroup(jPanel18Layout.createSequentialGroup()
-                                        .addComponent(jButton26, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addGap(0, 0, Short.MAX_VALUE))))
-                            .addGroup(jPanel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addGroup(jPanel18Layout.createSequentialGroup()
-                                    .addComponent(jLabel50, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(jTextField24, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGroup(jPanel18Layout.createSequentialGroup()
-                                    .addComponent(jLabel51, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(jTextField25, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGroup(jPanel18Layout.createSequentialGroup()
-                                    .addComponent(jLabel52, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(jTextField26, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGroup(jPanel18Layout.createSequentialGroup()
-                                    .addComponent(jLabel53, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(jTextField27, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGroup(jPanel18Layout.createSequentialGroup()
-                                    .addComponent(jLabel49, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(jTextField23, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                        .addGap(0, 42, Short.MAX_VALUE)))
-                .addContainerGap())
-        );
-        jPanel18Layout.setVerticalGroup(
-            jPanel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel18Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel48, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addGroup(jPanel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jTextField23)
-                    .addComponent(jLabel49, javax.swing.GroupLayout.DEFAULT_SIZE, 40, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel50, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField24))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel51, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField25))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel52, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField26, javax.swing.GroupLayout.DEFAULT_SIZE, 44, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel53, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField27, javax.swing.GroupLayout.DEFAULT_SIZE, 44, Short.MAX_VALUE))
-                .addGap(49, 49, 49)
-                .addGroup(jPanel18Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton24)
-                    .addComponent(jButton25)
-                    .addComponent(jButton27))
-                .addGap(30, 30, 30)
-                .addComponent(jButton26)
-                .addContainerGap(45, Short.MAX_VALUE))
-        );
-
-        table_edit_show.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null}
-            },
-            new String [] {
-                "Show Name", "Employee", "Date", "Language", "Status"
-            }
-        ));
-        jScrollPane4.setViewportView(table_edit_show);
-
-        javax.swing.GroupLayout jPanel19Layout = new javax.swing.GroupLayout(jPanel19);
-        jPanel19.setLayout(jPanel19Layout);
-        jPanel19Layout.setHorizontalGroup(
-            jPanel19Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel19Layout.createSequentialGroup()
-                .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 919, Short.MAX_VALUE)
-                .addContainerGap())
-        );
-        jPanel19Layout.setVerticalGroup(
-            jPanel19Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel19Layout.createSequentialGroup()
-                .addComponent(jScrollPane4)
-                .addContainerGap())
-        );
-
-        javax.swing.GroupLayout jPanel15Layout = new javax.swing.GroupLayout(jPanel15);
-        jPanel15.setLayout(jPanel15Layout);
-        jPanel15Layout.setHorizontalGroup(
-            jPanel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel15Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanel19, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel18, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(20, 20, 20))
-        );
-        jPanel15Layout.setVerticalGroup(
-            jPanel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel15Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel15Layout.createSequentialGroup()
-                        .addComponent(jPanel18, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 220, Short.MAX_VALUE))
-                    .addComponent(jPanel19, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
-        );
-
-        jtp.addTab("Edit Screen", jPanel15);
-
-        jPanel20.setBackground(new java.awt.Color(255, 255, 255));
-
-        javax.swing.GroupLayout jPanel20Layout = new javax.swing.GroupLayout(jPanel20);
-        jPanel20.setLayout(jPanel20Layout);
-        jPanel20Layout.setHorizontalGroup(
-            jPanel20Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel20Layout.createSequentialGroup()
-                .addGap(30, 30, 30)
-                .addComponent(jCalendar1, javax.swing.GroupLayout.PREFERRED_SIZE, 1298, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(54, Short.MAX_VALUE))
-        );
-        jPanel20Layout.setVerticalGroup(
-            jPanel20Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel20Layout.createSequentialGroup()
-                .addGap(25, 25, 25)
-                .addComponent(jCalendar1, javax.swing.GroupLayout.PREFERRED_SIZE, 694, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(33, Short.MAX_VALUE))
-        );
-
-        jtp.addTab("Calendar", jPanel20);
-
         jPanel1.add(jtp, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 30, 1350, 780));
 
         jPanel9.setBackground(new java.awt.Color(0, 153, 153));
@@ -2294,32 +2314,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
             }
         });
 
-        btn_editscreen.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/icons8-film-reel-23.png"))); // NOI18N
-        btn_editscreen.setText("Edit Screen");
-        btn_editscreen.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                btn_editscreenMouseClicked(evt);
-            }
-        });
-        btn_editscreen.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_editscreenActionPerformed(evt);
-            }
-        });
-
-        btn_calender.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/icons8-tear-off-calendar-23.png"))); // NOI18N
-        btn_calender.setText("Calendar");
-        btn_calender.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                btn_calenderMouseClicked(evt);
-            }
-        });
-        btn_calender.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_calenderActionPerformed(evt);
-            }
-        });
-
         javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
         jPanel9.setLayout(jPanel9Layout);
         jPanel9Layout.setHorizontalGroup(
@@ -2331,9 +2325,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                     .addComponent(btn_show, javax.swing.GroupLayout.DEFAULT_SIZE, 168, Short.MAX_VALUE)
                     .addComponent(btn_seats, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 168, Short.MAX_VALUE)
                     .addComponent(btn_employee, javax.swing.GroupLayout.DEFAULT_SIZE, 168, Short.MAX_VALUE)
-                    .addComponent(btn_payment, javax.swing.GroupLayout.DEFAULT_SIZE, 168, Short.MAX_VALUE)
-                    .addComponent(btn_editscreen, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 168, Short.MAX_VALUE)
-                    .addComponent(btn_calender, javax.swing.GroupLayout.DEFAULT_SIZE, 168, Short.MAX_VALUE))
+                    .addComponent(btn_payment, javax.swing.GroupLayout.DEFAULT_SIZE, 168, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel9Layout.setVerticalGroup(
@@ -2349,11 +2341,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addComponent(btn_payment, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(btn_employee, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(btn_editscreen, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(btn_calender, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(169, Short.MAX_VALUE))
+                .addContainerGap(305, Short.MAX_VALUE))
         );
 
         jPanel1.add(jPanel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 30, 180, 780));
@@ -2373,80 +2361,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btn_book_clearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_book_clearActionPerformed
-        clearSeatFields();
-    }//GEN-LAST:event_btn_book_clearActionPerformed
-
-    private void btn_book_receiptActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_book_receiptActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btn_book_receiptActionPerformed
-
-    private void btn_show_updateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_updateActionPerformed
-        //Check if the show already exists
-        if (tf_show_id.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please select a show!", "Warning", JOptionPane.WARNING_MESSAGE);
-        } else {
-            //Check if the show exists
-            if (checkShowExists(Integer.parseInt(tf_show_id.getText()))) {
-                //The employee_id will not be allowed to be changed!
-                if (tf_show_name.getText().isEmpty() || tc_show_starttime == null || tc_show_endtime == null || dc_show_date == null) {
-                    JOptionPane.showMessageDialog(this, "All fields are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
-                } else {
-                    //Inserting the data using user-defined method
-                    String showImg = "";
-                    int rowCount = updateShowData(tf_show_name.getText(), tc_show_starttime, tc_show_endtime, dc_show_date, showImg, Integer.parseInt(tf_show_id.getText()));
-
-                    if (rowCount > 0) { // Update successful (rows affected)
-                        JOptionPane.showMessageDialog(this, "Show details update!", "Success", JOptionPane.INFORMATION_MESSAGE);
-
-                        //Clear all fields
-                        clearShowFields();
-                        //Refresh Table after update
-                        loadShowTable();
-                    } else { // update was unsuccessful
-                        JOptionPane.showMessageDialog(this, "Eror occured while updating data!", "Warning", JOptionPane.WARNING_MESSAGE);
-                    }
-
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "Show doesnot exists!", "Warning", JOptionPane.WARNING_MESSAGE);
-            }
-        }
-    }//GEN-LAST:event_btn_show_updateActionPerformed
-
-    private void btn_show_deleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_deleteActionPerformed
-        //Check if the show already exists
-        if (tf_show_id.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please select a show!", "Warning", JOptionPane.WARNING_MESSAGE);
-        } else {
-            //Check if the show exists
-            String showId = tf_show_id.getText();
-            if (checkShowExists(Integer.parseInt(showId))) {
-                int rowCount = deleteShowData(Integer.parseInt(showId));
-                if (rowCount >= 1) { // 2 queries will be executed.
-                    JOptionPane.showMessageDialog(this, "Show with id:" + showId + " deleted!", "Success", JOptionPane.INFORMATION_MESSAGE);
-
-                    //Clear all fields
-                    clearShowFields();
-                    //Refresh Table after update
-                    loadShowTable();
-                } else {
-                    JOptionPane.showMessageDialog(this, "Eror occured while deleting data!", "Warning", JOptionPane.WARNING_MESSAGE);
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "Show doesnot exists!", "Warning", JOptionPane.WARNING_MESSAGE);
-            }
-        }
-    }//GEN-LAST:event_btn_show_deleteActionPerformed
-
-    private void tf_pay_searchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tf_pay_searchActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_tf_pay_searchActionPerformed
-
-    private void tf_pay_idActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tf_pay_idActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_tf_pay_idActionPerformed
-
     private void btn_dashboardMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btn_dashboardMouseClicked
         // TODO add your handling code here:
         jtp.setSelectedIndex(0);
@@ -2464,15 +2378,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_btn_seatsMouseClicked
 
-    private void btn_employeeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btn_employeeMouseClicked
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btn_employeeMouseClicked
-
-    private void btn_employeeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_employeeActionPerformed
-
-        jtp.setSelectedIndex(4);
-    }//GEN-LAST:event_btn_employeeActionPerformed
-
     private void btn_paymentMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btn_paymentMouseClicked
         // TODO add your handling code here:
     }//GEN-LAST:event_btn_paymentMouseClicked
@@ -2481,28 +2386,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         jtp.setSelectedIndex(3);
     }//GEN-LAST:event_btn_paymentActionPerformed
-
-    private void btn_editscreenMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btn_editscreenMouseClicked
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btn_editscreenMouseClicked
-
-    private void btn_editscreenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_editscreenActionPerformed
-        // TODO add your handling code here:
-        jtp.setSelectedIndex(5);
-    }//GEN-LAST:event_btn_editscreenActionPerformed
-
-    private void btn_calenderMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btn_calenderMouseClicked
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btn_calenderMouseClicked
-
-    private void btn_calenderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_calenderActionPerformed
-        // TODO add your handling code here:
-        jtp.setSelectedIndex(6);
-    }//GEN-LAST:event_btn_calenderActionPerformed
-
-    private void jButton18ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton18ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton18ActionPerformed
 
     private void btn_seatsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_seatsActionPerformed
         jtp.setSelectedIndex(1);
@@ -2520,63 +2403,31 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btn_logoutActionPerformed
 
-    private void table_empMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_table_empMouseClicked
-        if (evt.getClickCount() == 2) {
-            int r = table_emp.getSelectedRow();
-            if (r != -1) {
-                tf_emp_id.setText(table_emp.getValueAt(r, 0).toString());
-                tf_emp_fname.setText(table_emp.getValueAt(r, 1).toString());
-                tf_emp_lname.setText(table_emp.getValueAt(r, 2).toString());
-                try {
-                    dc_emp_dob.setDate(new SimpleDateFormat("yyyy-MM-dd").parse((String) table_emp.getValueAt(r, 3)));
-                } catch (ParseException ex) {
-                    ex.printStackTrace();
-                }
-                tf_emp_telno.setText(table_emp.getValueAt(r, 4).toString());
-                tf_emp_address.setText(table_emp.getValueAt(r, 5).toString());
-                loadEmployeeRoles(table_emp.getValueAt(r, 6).toString());
-            }
-        }
-    }//GEN-LAST:event_table_empMouseClicked
-
-    private void btn_emp_addActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_addActionPerformed
-        //Regex for validating mobile number (Sri lanka only)
-        //Mobile number : (?:7|01|07)(?:0|1|2|4|5|6|7|8)\\d{7}$
-        String telno_regex = "^(?:7|01|07)(?:0|1|2|4|5|6|7|8)\\\\d{7}$";
-
-        //EmployeeId is auto matically generated!
-        //Check if all fields are filled - Validations, Except the DOB
-        if (tf_emp_fname.getText().isEmpty() || tf_emp_lname.getText().isEmpty() || tf_emp_telno.getText().isEmpty() || tf_emp_address.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "All fields except DOB are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
-        } else if (!validateRegex(tf_emp_telno.getText(), telno_regex)) {
-            JOptionPane.showMessageDialog(this, "Please enter valid mobile number (Sri lanka)!", "Warning", JOptionPane.WARNING_MESSAGE);
-        } else if (cb_emp_role.getSelectedItem().toString().equals("Select")) {
-            JOptionPane.showMessageDialog(this, "Please select a role!", "Warning", JOptionPane.WARNING_MESSAGE);
-        } else if (cb_emp_role.getSelectedItem().toString().equals("Admin")) {
-            JOptionPane.showMessageDialog(this, "Admin roles cannot be assigned!", "Warning", JOptionPane.WARNING_MESSAGE);
+    private void btn_emp_statusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_statusActionPerformed
+        //Check if the user already exists
+        if (tf_emp_id.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please enter/select a User ID!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
-            //Inserting the data using user-defined method
-            int rowCount = insertEmployeeData(tf_emp_fname.getText(), tf_emp_lname.getText(), dc_emp_dob, tf_emp_telno.getText(), tf_emp_address.getText(), cb_emp_role.getSelectedIndex());
+            //Check if the user exists
+            if (checkEmployeeExists(Integer.parseInt(tf_emp_id.getText()))) {
+                int rowCount = toggleEmployeeStatus(Integer.parseInt(tf_emp_id.getText()));
+                if (rowCount > 0) { // Employee status update successful (rows are affected)
+                    JOptionPane.showMessageDialog(this, "Employee status updated!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
-            if (rowCount > 0) { // Insert successful (rows affected)
-                JOptionPane.showMessageDialog(this, "Employee details entered!", "Success", JOptionPane.INFORMATION_MESSAGE);
-
-                //Clear all fields
-                clearEmployeeFields();
-                //Refresh Table after update
-                loadEmployeeTable();
-            } else { // Insert was unsuccessful
-                JOptionPane.showMessageDialog(this, "Eror occured while inserting data!", "Warning", JOptionPane.WARNING_MESSAGE);
+                    //Refresh Table after update
+                    loadEmployeeTable();
+                } else { // Employee status update unsuccessful
+                    JOptionPane.showMessageDialog(this, "Eror occured while updating employee status!", "Warning", JOptionPane.WARNING_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "User doesnot exists!", "Warning", JOptionPane.WARNING_MESSAGE);
             }
-
         }
-
-    }//GEN-LAST:event_btn_emp_addActionPerformed
+    }//GEN-LAST:event_btn_emp_statusActionPerformed
 
     private void btn_emp_clearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_clearActionPerformed
         clearEmployeeFields();
         loadEmployeeTable();
-
     }//GEN-LAST:event_btn_emp_clearActionPerformed
 
     private void btn_emp_updateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_updateActionPerformed
@@ -2622,60 +2473,147 @@ public class dashBoard_gui extends javax.swing.JFrame {
             }
         }
 
-
     }//GEN-LAST:event_btn_emp_updateActionPerformed
 
-    private void btn_emp_statusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_statusActionPerformed
-        //Check if the user already exists
-        if (tf_emp_id.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter/select a User ID!", "Warning", JOptionPane.WARNING_MESSAGE);
-        } else {
-            //Check if the user exists
-            if (checkEmployeeExists(Integer.parseInt(tf_emp_id.getText()))) {
-                int rowCount = toggleEmployeeStatus(Integer.parseInt(tf_emp_id.getText()));
-                if (rowCount > 0) { // Employee status update successful (rows are affected)
-                    JOptionPane.showMessageDialog(this, "Employee status updated!", "Success", JOptionPane.INFORMATION_MESSAGE);
+    private void btn_emp_addActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_emp_addActionPerformed
+        //Regex for validating mobile number (Sri lanka only)
+        //Mobile number : (?:7|01|07)(?:0|1|2|4|5|6|7|8)\\d{7}$
+        String telno_regex = "^(?:7|01|07)(?:0|1|2|4|5|6|7|8)\\\\d{7}$";
 
-                    //Refresh Table after update
-                    loadEmployeeTable();
-                } else { // Employee status update unsuccessful
-                    JOptionPane.showMessageDialog(this, "Eror occured while updating employee status!", "Warning", JOptionPane.WARNING_MESSAGE);
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "User doesnot exists!", "Warning", JOptionPane.WARNING_MESSAGE);
-            }
-        }
-    }//GEN-LAST:event_btn_emp_statusActionPerformed
-
-    private void btn_show_insertActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_insertActionPerformed
-        //ShowId is automatically generated!
-        //Check if all fields are filled - Validations
-        if (tf_show_name.getText().isEmpty() || tc_show_starttime == null || tc_show_endtime == null || dc_show_date == null) {
-            JOptionPane.showMessageDialog(this, "All fields are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
+        //EmployeeId is auto matically generated!
+        //Check if all fields are filled - Validations, Except the DOB
+        if (tf_emp_fname.getText().isEmpty() || tf_emp_lname.getText().isEmpty() || tf_emp_telno.getText().isEmpty() || tf_emp_address.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "All fields except DOB are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (!validateRegex(tf_emp_telno.getText(), telno_regex)) {
+            JOptionPane.showMessageDialog(this, "Please enter valid mobile number (Sri lanka)!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (cb_emp_role.getSelectedItem().toString().equals("Select")) {
+            JOptionPane.showMessageDialog(this, "Please select a role!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (cb_emp_role.getSelectedItem().toString().equals("Admin")) {
+            JOptionPane.showMessageDialog(this, "Admin roles cannot be assigned!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
             //Inserting the data using user-defined method
-            String showImg = "";
-            int rowCount = insertShowData(tf_show_name.getText(), tc_show_starttime, tc_show_endtime, dc_show_date, showImg);
+            int rowCount = insertEmployeeData(tf_emp_fname.getText(), tf_emp_lname.getText(), dc_emp_dob, tf_emp_telno.getText(), tf_emp_address.getText(), cb_emp_role.getSelectedIndex());
 
             if (rowCount > 0) { // Insert successful (rows affected)
-                JOptionPane.showMessageDialog(this, "Show details entered!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Employee details entered!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
                 //Clear all fields
-                clearShowFields();
+                clearEmployeeFields();
                 //Refresh Table after update
-                loadShowTable();
+                loadEmployeeTable();
             } else { // Insert was unsuccessful
                 JOptionPane.showMessageDialog(this, "Eror occured while inserting data!", "Warning", JOptionPane.WARNING_MESSAGE);
             }
 
         }
+    }//GEN-LAST:event_btn_emp_addActionPerformed
 
-    }//GEN-LAST:event_btn_show_insertActionPerformed
+    private void table_empMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_table_empMouseClicked
+        if (evt.getClickCount() == 2) {
+            int r = table_emp.getSelectedRow();
+            if (r != -1) {
+                tf_emp_id.setText(table_emp.getValueAt(r, 0).toString());
+                tf_emp_fname.setText(table_emp.getValueAt(r, 1).toString());
+                tf_emp_lname.setText(table_emp.getValueAt(r, 2).toString());
+                try {
+                    dc_emp_dob.setDate(new SimpleDateFormat("yyyy-MM-dd").parse((String) table_emp.getValueAt(r, 3)));
+                } catch (ParseException ex) {
+                    ex.printStackTrace();
+                }
+                tf_emp_telno.setText(table_emp.getValueAt(r, 4).toString());
+                tf_emp_address.setText(table_emp.getValueAt(r, 5).toString());
+                loadEmployeeRoles(table_emp.getValueAt(r, 6).toString());
+            }
+        }
+    }//GEN-LAST:event_table_empMouseClicked
 
-    private void btn_show_clearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_clearActionPerformed
-        clearShowFields();
-        loadShowTable();
-    }//GEN-LAST:event_btn_show_clearActionPerformed
+    private void jButton18ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton18ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton18ActionPerformed
+
+    private void jButton16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton16ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton16ActionPerformed
+
+    private void tf_pay_idActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tf_pay_idActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_tf_pay_idActionPerformed
+
+    private void table_paymentMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_table_paymentMouseClicked
+        if (evt.getClickCount() == 2) {
+            int r = table_show.getSelectedRow();
+            if (r != -1) {
+                tf_pay_id.setText(table_show.getValueAt(r, 0).toString());
+                tf_pay_showname.setText(table_show.getValueAt(r, 1).toString());
+                tf_pay_total.setText(table_show.getValueAt(r, 2).toString());
+                loadPaymentType();
+                //table_show.getValueAt(r, 4).toString()
+                try {
+                    dc_pay_date.setDate(new SimpleDateFormat("yyyy-MM-dd").parse((String) table_show.getValueAt(r, 5)));
+                } catch (ParseException ex) {
+                    ex.printStackTrace();
+                }
+                tf_pay_given.setText(table_show.getValueAt(r, 6).toString());
+                tf_pay_balance.setText(table_show.getValueAt(r, 7).toString());
+            }
+        }
+
+    }//GEN-LAST:event_table_paymentMouseClicked
+
+    private void tf_pay_searchKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tf_pay_searchKeyReleased
+        //Checking if the search field is empty or not, and invoking the respective methods to fill the table
+        if (!tf_pay_search.getText().isEmpty() || !tf_pay_search.getText().equals("Search")) {
+            loadPaymentHistory(tf_pay_search.getText());
+        } else {
+            loadPaymentHistory();
+        }
+    }//GEN-LAST:event_tf_pay_searchKeyReleased
+
+    private void tf_pay_searchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tf_pay_searchActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_tf_pay_searchActionPerformed
+
+    private void tf_pay_searchFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_pay_searchFocusLost
+        if (tf_pay_search.getText().isBlank()) {
+            tf_pay_search.setText("Search");
+            tf_pay_search.setForeground(new Color(102, 102, 102));
+        } else {
+            tf_pay_search.setForeground(Color.black);
+        }
+    }//GEN-LAST:event_tf_pay_searchFocusLost
+
+    private void tf_pay_searchFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_pay_searchFocusGained
+        if (tf_pay_search.getText().equals("Search")) {
+            tf_pay_search.setText("");
+        }
+        tf_pay_search.setForeground(Color.black);
+    }//GEN-LAST:event_tf_pay_searchFocusGained
+
+    private void tf_show_searchKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tf_show_searchKeyReleased
+        //Checking if the search field is empty or not, and invoking the respective methods to fill the table
+        if (!tf_show_search.getText().isEmpty() || !tf_show_search.getText().equals("Search")) {
+            loadShowTable(tf_show_search.getText());
+        } else {
+            loadShowTable();
+        }
+
+    }//GEN-LAST:event_tf_show_searchKeyReleased
+
+    private void tf_show_searchFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_show_searchFocusLost
+        if (tf_show_search.getText().isBlank()) {
+            tf_show_search.setText("Search");
+            tf_show_search.setForeground(new Color(102, 102, 102));
+        } else {
+            tf_show_search.setForeground(Color.black);
+        }
+    }//GEN-LAST:event_tf_show_searchFocusLost
+
+    private void tf_show_searchFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_show_searchFocusGained
+        if (tf_show_search.getText().equals("Search")) {
+            tf_show_search.setText("");
+        }
+        tf_show_search.setForeground(Color.black);
+    }//GEN-LAST:event_tf_show_searchFocusGained
 
     private void table_showMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_table_showMouseClicked
         if (evt.getClickCount() == 2) {
@@ -2706,94 +2644,92 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_table_showMouseClicked
 
-    private void tf_show_searchKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tf_show_searchKeyReleased
-        //Checking if the search field is empty or not, and invoking the respective methods to fill the table
-        if (!tf_show_search.getText().isEmpty() || !tf_show_search.getText().equals("Search")) {
-            loadShowTable(tf_show_search.getText());
+    private void btn_show_clearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_clearActionPerformed
+        clearShowFields();
+        loadShowTable();
+    }//GEN-LAST:event_btn_show_clearActionPerformed
+
+    private void btn_show_deleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_deleteActionPerformed
+        //Check if the show already exists
+        if (tf_show_id.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please select a show!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
-            loadShowTable();
+            //Check if the show exists
+            String showId = tf_show_id.getText();
+            if (checkShowExists(Integer.parseInt(showId))) {
+                int rowCount = deleteShowData(Integer.parseInt(showId));
+                if (rowCount >= 1) { // 2 queries will be executed.
+                    JOptionPane.showMessageDialog(this, "Show with id:" + showId + " deleted!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                    //Clear all fields
+                    clearShowFields();
+                    //Refresh Table after update
+                    loadShowTable();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Eror occured while deleting data!", "Warning", JOptionPane.WARNING_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Show doesnot exists!", "Warning", JOptionPane.WARNING_MESSAGE);
+            }
         }
+    }//GEN-LAST:event_btn_show_deleteActionPerformed
 
-
-    }//GEN-LAST:event_tf_show_searchKeyReleased
-
-    private void tf_show_searchFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_show_searchFocusGained
-        if (tf_show_search.getText().equals("Search")) {
-            tf_show_search.setText("");
-        }
-        tf_show_search.setForeground(Color.black);
-    }//GEN-LAST:event_tf_show_searchFocusGained
-
-    private void tf_show_searchFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_show_searchFocusLost
-        if (tf_show_search.getText().isBlank()) {
-            tf_show_search.setText("Search");
-            tf_show_search.setForeground(new Color(102, 102, 102));
+    private void btn_show_updateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_updateActionPerformed
+        //Check if the show already exists
+        if (tf_show_id.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please select a show!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
-            tf_show_search.setForeground(Color.black);
+            //Check if the show exists
+            if (checkShowExists(Integer.parseInt(tf_show_id.getText()))) {
+                //The employee_id will not be allowed to be changed!
+                if (tf_show_name.getText().isEmpty() || tc_show_starttime == null || tc_show_endtime == null || dc_show_date == null) {
+                    JOptionPane.showMessageDialog(this, "All fields are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
+                } else {
+                    //Inserting the data using user-defined method
+                    String showImg = "";
+                    int rowCount = updateShowData(tf_show_name.getText(), tc_show_starttime, tc_show_endtime, dc_show_date, showImg, Integer.parseInt(tf_show_id.getText()));
+
+                    if (rowCount > 0) { // Update successful (rows affected)
+                        JOptionPane.showMessageDialog(this, "Show details update!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                        //Clear all fields
+                        clearShowFields();
+                        //Refresh Table after update
+                        loadShowTable();
+                    } else { // update was unsuccessful
+                        JOptionPane.showMessageDialog(this, "Eror occured while updating data!", "Warning", JOptionPane.WARNING_MESSAGE);
+                    }
+
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Show doesnot exists!", "Warning", JOptionPane.WARNING_MESSAGE);
+            }
         }
-    }//GEN-LAST:event_tf_show_searchFocusLost
+    }//GEN-LAST:event_btn_show_updateActionPerformed
 
-    private void label_book_showidPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_label_book_showidPropertyChange
+    private void btn_show_insertActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_show_insertActionPerformed
+        //ShowId is automatically generated!
+        //Check if all fields are filled - Validations
+        if (tf_show_name.getText().isEmpty() || tc_show_starttime == null || tc_show_endtime == null || dc_show_date == null) {
+            JOptionPane.showMessageDialog(this, "All fields are mandatory!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else {
+            //Inserting the data using user-defined method
+            String showImg = "";
+            int rowCount = insertShowData(tf_show_name.getText(), tc_show_starttime, tc_show_endtime, dc_show_date, showImg);
 
-    }//GEN-LAST:event_label_book_showidPropertyChange
+            if (rowCount > 0) { // Insert successful (rows affected)
+                JOptionPane.showMessageDialog(this, "Show details entered!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
-    private void cb_book_typeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cb_book_typeActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_cb_book_typeActionPerformed
+                //Clear all fields
+                clearShowFields();
+                //Refresh Table after update
+                loadShowTable();
+            } else { // Insert was unsuccessful
+                JOptionPane.showMessageDialog(this, "Eror occured while inserting data!", "Warning", JOptionPane.WARNING_MESSAGE);
+            }
 
-    private void btn_a1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a1ActionPerformed
-        //Check if Seat is available
-        String seatNo = btn_a1.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
-            //Call the "addSeat" function to add the details into the booking list table in the dashboard
-            addSeat(seatNo);
         }
-    }//GEN-LAST:event_btn_a1ActionPerformed
-
-    private void btn_a4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a4ActionPerformed
-        //Check if Seat is available
-        String seatNo = btn_a4.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
-            //Call the "addSeat" function to add the details into the booking list table in the dashboard
-            addSeat(seatNo);
-        }
-    }//GEN-LAST:event_btn_a4ActionPerformed
-
-    private void btn_a2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a2ActionPerformed
-        //Check if Seat is available
-        String seatNo = btn_a2.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
-            //Call the "addSeat" function to add the details into the booking list table in the dashboard
-            addSeat(seatNo);
-        }
-    }//GEN-LAST:event_btn_a2ActionPerformed
-
-    private void btn_a5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a5ActionPerformed
-        //Check if Seat is available
-        String seatNo = btn_a5.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
-            //Call the "addSeat" function to add the details into the booking list table in the dashboard
-            addSeat(seatNo);
-        }
-    }//GEN-LAST:event_btn_a5ActionPerformed
-
-    private void btn_a6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a6ActionPerformed
-        //Check if Seat is available
-        String seatNo = btn_a6.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
-            //Call the "addSeat" function to add the details into the booking list table in the dashboard
-            addSeat(seatNo);
-        }
-    }//GEN-LAST:event_btn_a6ActionPerformed
-
-    private void btn_a7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a7ActionPerformed
-        //Check if Seat is available
-        String seatNo = btn_a7.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
-            //Call the "addSeat" function to add the details into the booking list table in the dashboard
-            addSeat(seatNo);
-        }
-    }//GEN-LAST:event_btn_a7ActionPerformed
+    }//GEN-LAST:event_btn_show_insertActionPerformed
 
     private void btn_a3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a3ActionPerformed
         //Check if Seat is available
@@ -2804,57 +2740,67 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btn_a3ActionPerformed
 
-    private void btn_book_selectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_book_selectActionPerformed
-        new show_select_gui(this).setVisible(true);
-    }//GEN-LAST:event_btn_book_selectActionPerformed
-
-    private void tf_pay_searchFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_pay_searchFocusGained
-        if (tf_pay_search.getText().equals("Search")) {
-            tf_pay_search.setText("");
+    private void btn_a7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a7ActionPerformed
+        //Check if Seat is available
+        String seatNo = btn_a7.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
         }
-        tf_pay_search.setForeground(Color.black);
+    }//GEN-LAST:event_btn_a7ActionPerformed
 
-    }//GEN-LAST:event_tf_pay_searchFocusGained
-
-    private void tf_pay_searchFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_pay_searchFocusLost
-        if (tf_pay_search.getText().isBlank()) {
-            tf_pay_search.setText("Search");
-            tf_pay_search.setForeground(new Color(102, 102, 102));
-        } else {
-            tf_pay_search.setForeground(Color.black);
+    private void btn_a6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a6ActionPerformed
+        //Check if Seat is available
+        String seatNo = btn_a6.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
         }
-    }//GEN-LAST:event_tf_pay_searchFocusLost
+    }//GEN-LAST:event_btn_a6ActionPerformed
 
-    private void tf_pay_searchKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tf_pay_searchKeyReleased
-        //Checking if the search field is empty or not, and invoking the respective methods to fill the table
-        if (!tf_pay_search.getText().isEmpty() || !tf_pay_search.getText().equals("Search")) {
-            loadPaymentHistory(tf_pay_search.getText());
-        } else {
-            loadPaymentHistory();
+    private void btn_a5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a5ActionPerformed
+        //Check if Seat is available
+        String seatNo = btn_a5.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
         }
-    }//GEN-LAST:event_tf_pay_searchKeyReleased
+    }//GEN-LAST:event_btn_a5ActionPerformed
 
-    private void table_paymentMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_table_paymentMouseClicked
-        if (evt.getClickCount() == 2) {
-            int r = table_show.getSelectedRow();
-            if (r != -1) {
-                tf_pay_id.setText(table_show.getValueAt(r, 0).toString());
-                tf_pay_showname.setText(table_show.getValueAt(r, 1).toString());
-                tf_pay_total.setText(table_show.getValueAt(r, 2).toString());
-                loadPaymentType();
-//table_show.getValueAt(r, 4).toString()
-                try {
-                    dc_pay_date.setDate(new SimpleDateFormat("yyyy-MM-dd").parse((String) table_show.getValueAt(r, 5)));
-                } catch (ParseException ex) {
-                    ex.printStackTrace();
-                }
-                tf_pay_given.setText(table_show.getValueAt(r, 6).toString());
-                tf_pay_balance.setText(table_show.getValueAt(r, 7).toString());
-            }
+    private void btn_a1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a1ActionPerformed
+        //Check if Seat is available
+        String seatNo = btn_a1.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
         }
+    }//GEN-LAST:event_btn_a1ActionPerformed
 
+    private void btn_a2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a2ActionPerformed
+        //Check if Seat is available
+        String seatNo = btn_a2.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
+        }
+    }//GEN-LAST:event_btn_a2ActionPerformed
 
-    }//GEN-LAST:event_table_paymentMouseClicked
+    private void btn_a4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a4ActionPerformed
+        //Check if Seat is available
+        String seatNo = btn_a4.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
+        }
+    }//GEN-LAST:event_btn_a4ActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        int r = table_book.getSelectedRow();
+        if (r != -1) {
+            DefaultTableModel model = (DefaultTableModel) table_book.getModel();
+            model.removeRow(r);
+        }
+    }//GEN-LAST:event_jButton1ActionPerformed
 
     private void tf_book_paymentKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tf_book_paymentKeyReleased
         if (!tf_book_payment.getText().isEmpty()) {
@@ -2872,6 +2818,14 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_tf_book_paymentKeyReleased
 
+    private void btn_book_receiptActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_book_receiptActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_book_receiptActionPerformed
+
+    private void btn_book_clearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_book_clearActionPerformed
+        clearSeatFields();
+    }//GEN-LAST:event_btn_book_clearActionPerformed
+
     private void JScrollPaneMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_JScrollPaneMouseClicked
         // TODO add your handling code here:
     }//GEN-LAST:event_JScrollPaneMouseClicked
@@ -2886,17 +2840,54 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_table_bookMouseClicked
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        int r = table_book.getSelectedRow();
-        if (r != -1) {
-            DefaultTableModel model = (DefaultTableModel) table_book.getModel();
-            model.removeRow(r);
-        }
-    }//GEN-LAST:event_jButton1ActionPerformed
+    private void btn_book_selectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_book_selectActionPerformed
+        new show_select_gui(this).setVisible(true);
+    }//GEN-LAST:event_btn_book_selectActionPerformed
 
-    private void jButton16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton16ActionPerformed
+    private void label_book_showidPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_label_book_showidPropertyChange
+
+    }//GEN-LAST:event_label_book_showidPropertyChange
+
+    private void cb_book_typeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cb_book_typeActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jButton16ActionPerformed
+    }//GEN-LAST:event_cb_book_typeActionPerformed
+
+    private void btn_employeeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_employeeActionPerformed
+
+        jtp.setSelectedIndex(4);
+    }//GEN-LAST:event_btn_employeeActionPerformed
+
+    private void btn_employeeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btn_employeeMouseClicked
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_employeeMouseClicked
+
+    private void btn_a8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a8ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_a8ActionPerformed
+
+    private void btn_a9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a9ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_a9ActionPerformed
+
+    private void btn_a10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a10ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_a10ActionPerformed
+
+    private void btn_a11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a11ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_a11ActionPerformed
+
+    private void btn_a12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a12ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_a12ActionPerformed
+
+    private void btn_a13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a13ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_a13ActionPerformed
+
+    private void btn_a14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a14ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btn_a14ActionPerformed
 
     public static void main(String args[]) {
         try {
@@ -2915,19 +2906,24 @@ public class dashBoard_gui extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JScrollPane JScrollPane;
     private javax.swing.JButton btn_a1;
+    private javax.swing.JButton btn_a10;
+    private javax.swing.JButton btn_a11;
+    private javax.swing.JButton btn_a12;
+    private javax.swing.JButton btn_a13;
+    private javax.swing.JButton btn_a14;
     private javax.swing.JButton btn_a2;
     private javax.swing.JButton btn_a3;
     private javax.swing.JButton btn_a4;
     private javax.swing.JButton btn_a5;
     private javax.swing.JButton btn_a6;
     private javax.swing.JButton btn_a7;
+    private javax.swing.JButton btn_a8;
+    private javax.swing.JButton btn_a9;
     private javax.swing.JButton btn_book;
     private javax.swing.JButton btn_book_clear;
     private javax.swing.JButton btn_book_receipt;
     private javax.swing.JButton btn_book_select;
-    private javax.swing.JButton btn_calender;
     private javax.swing.JButton btn_dashboard;
-    private javax.swing.JButton btn_editscreen;
     private javax.swing.JButton btn_emp_add;
     private javax.swing.JButton btn_emp_clear;
     private javax.swing.JButton btn_emp_status;
@@ -2953,12 +2949,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JButton jButton16;
     private javax.swing.JButton jButton17;
     private javax.swing.JButton jButton18;
-    private javax.swing.JButton jButton24;
-    private javax.swing.JButton jButton25;
-    private javax.swing.JButton jButton26;
-    private javax.swing.JButton jButton27;
-    private com.toedter.calendar.JCalendar jCalendar1;
-    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
@@ -2982,7 +2972,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel37;
     private javax.swing.JLabel jLabel38;
     private javax.swing.JLabel jLabel39;
-    private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel40;
     private javax.swing.JLabel jLabel41;
     private javax.swing.JLabel jLabel42;
@@ -2991,36 +2980,21 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel45;
     private javax.swing.JLabel jLabel46;
     private javax.swing.JLabel jLabel47;
-    private javax.swing.JLabel jLabel48;
-    private javax.swing.JLabel jLabel49;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel50;
-    private javax.swing.JLabel jLabel51;
-    private javax.swing.JLabel jLabel52;
-    private javax.swing.JLabel jLabel53;
     private javax.swing.JLabel jLabel54;
     private javax.swing.JLabel jLabel55;
     private javax.swing.JLabel jLabel56;
-    private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
-    private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel10;
     private javax.swing.JPanel jPanel11;
     private javax.swing.JPanel jPanel12;
     private javax.swing.JPanel jPanel13;
     private javax.swing.JPanel jPanel14;
-    private javax.swing.JPanel jPanel15;
     private javax.swing.JPanel jPanel16;
     private javax.swing.JPanel jPanel17;
-    private javax.swing.JPanel jPanel18;
-    private javax.swing.JPanel jPanel19;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel20;
     private javax.swing.JPanel jPanel21;
     private javax.swing.JPanel jPanel4;
-    private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
     private javax.swing.JPanel jPanel8;
@@ -3028,21 +3002,21 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
-    private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JSeparator jSeparator1;
-    private javax.swing.JTextField jTextField23;
-    private javax.swing.JTextField jTextField24;
-    private javax.swing.JTextField jTextField25;
-    private javax.swing.JTextField jTextField26;
-    private javax.swing.JTextField jTextField27;
     private javax.swing.JTabbedPane jtp;
     private javax.swing.JLabel label_book_balance;
     public javax.swing.JLabel label_book_showid;
     private javax.swing.JLabel label_book_total;
+    private javax.swing.JLabel label_dashboard_1;
+    private javax.swing.JLabel label_dashboard_2;
+    private javax.swing.JLabel label_dashboard_3;
+    private javax.swing.JLabel label_dashboard_4;
+    private javax.swing.JLabel label_dashboard_5;
+    private javax.swing.JLabel label_dashboard_6;
     private javax.swing.JLabel label_show_image;
     private javax.swing.JLabel label_uname;
+    private javax.swing.JPanel seats_panel;
     private javax.swing.JTable table_book;
-    private javax.swing.JTable table_edit_show;
     private javax.swing.JTable table_emp;
     private javax.swing.JTable table_payment;
     private javax.swing.JTable table_show;
