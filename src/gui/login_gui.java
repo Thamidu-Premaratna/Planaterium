@@ -9,6 +9,7 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JOptionPane;
 import model.DbConnect;
 import java.sql.PreparedStatement;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class login_gui extends javax.swing.JFrame {
 
@@ -228,7 +229,17 @@ public class login_gui extends javax.swing.JFrame {
             String user_role = cb_role.getSelectedItem().toString();
             try {
                 //User status and role will also be checked other that password and username
-                String query = "SELECT * FROM `login` WHERE `username` = ? AND `password` = ? AND `employee_id` IN(SELECT `id` FROM `employee` WHERE `role_id` IN(SELECT `id` FROM `role` WHERE `type` = ?) AND `status_id` = 1)";
+                String query = """
+                               SELECT *
+                               FROM `login` l
+                               WHERE l.username = ? AND l.password = ? AND l.employee_id IN(
+                               SELECT e.employee_id
+                               FROM `employee` e
+                               WHERE e.role_id IN(
+                               SELECT r.id
+                               FROM `role` r
+                               WHERE r.`type` = ?) AND e.status_id = 1)
+                               """;
                 PreparedStatement stmt = DbConnect.createConnection().prepareStatement(query);
                 stmt.setString(1, username);
                 stmt.setString(2, password);
@@ -238,14 +249,13 @@ public class login_gui extends javax.swing.JFrame {
                 if (rs.next()) {
                     JOptionPane.showMessageDialog(this, "Logged in!", "Success", JOptionPane.INFORMATION_MESSAGE);
                     int empId = Integer.parseInt(rs.getString("employee_id"));
-                    int uRoleId = Integer.parseInt(rs.getString("employee_id"));
-
-                    if (user_role.equals("Admin")) {
-                        new dashBoard_gui(2, empId, username, uRoleId).setVisible(true);
-                    } else if (user_role.equals("Manager")) {
-                        new dashBoard_gui(3, empId, username, uRoleId).setVisible(true);
-                    } else {
-                        new dashBoard_gui(1, empId, username, uRoleId).setVisible(true);
+                    int uRoleId = Integer.parseInt(rs.getString("id"));
+                    
+                    //Rule switch
+                    switch (user_role) {
+                        case "Admin" -> new dashBoard_gui(2, empId, username, uRoleId).setVisible(true);
+                        case "Manager" -> new dashBoard_gui(3, empId, username, uRoleId).setVisible(true);
+                        default -> new dashBoard_gui(1, empId, username, uRoleId).setVisible(true);
                     }
                     this.dispose();
                 } else {
@@ -283,7 +293,7 @@ public class login_gui extends javax.swing.JFrame {
     public static void main(String args[]) {
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
-        } catch (Exception e) {
+        } catch (UnsupportedLookAndFeelException e) {
             e.printStackTrace();
         }
         java.awt.EventQueue.invokeLater(new Runnable() {

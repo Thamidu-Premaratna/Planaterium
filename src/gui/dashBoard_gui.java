@@ -24,10 +24,13 @@ import javax.swing.event.TableModelListener;
 import model.DbConnect;
 import classes.SeatMap;
 import java.awt.Component;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class dashBoard_gui extends javax.swing.JFrame {
 
@@ -42,7 +45,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
     //Arrays that will be used to keep the seat information
     private String[] seatArr; //Seats available
-    private String[] choosenSeatArr; //Seats choosen for Booking
 
     //Keeps an array of JLabel objects that exist in the dashboard
     private JLabel[] labelArr;
@@ -456,11 +458,167 @@ public class dashBoard_gui extends javax.swing.JFrame {
         return showIdArr;
     }
 //------------------------------------------------------------------------------    
+//                              Payment-(History)
+//------------------------------------------------------------------------------ 
+
+    /*
+    The view created for the table with multiple inner joins
+    
+    CREATE VIEW payment_history AS
+    SELECT 
+    s.`show_id` AS sid,s.`show_name`,s.`start_time`,s.`end_time`,s.`show_date`,s.`employee_id` AS sempid,
+    r.`id` AS rid,r.`r_date`,r.`r_time`,r.`employee_id` AS rempid,r.`show_id` AS rsid,r.`ticket_id`,
+    p.`id` AS pid,p.`given`,p.`total_amount`,p.`date`,p.`payment_method_id`,p.`reservation_id`,
+    pm.`id` AS pmid,pm.`type`
+    FROM `show` s
+    INNER JOIN `reservation` r ON s.show_id = r.show_id
+    INNER JOIN `payment` p ON r.id = p.reservation_id
+    INNER JOIN `payment_method` pm ON p.payment_method_id = pm.id
+    
+     */
+    //Load the payment history table
+    private void loadPaymentHistory() {
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `payment_history`");
+            ResultSet rs = stmt.executeQuery();
+            DefaultTableModel dtm = (DefaultTableModel) table_payment.getModel();
+            dtm.setRowCount(0);
+            while (rs.next()) {
+                //Create new vector for each record of the table
+                Vector v = new Vector();
+                v.add(rs.getString("reservation_id"));
+                v.add(rs.getString("show_name"));
+                v.add(rs.getString("total_amount"));
+                v.add(rs.getString("type"));
+                v.add(rs.getString("date"));
+                v.add(rs.getString("given"));
+                v.add(rs.getDouble("given") - rs.getDouble("total_amount"));
+                dtm.addRow(v);
+            }
+            System.out.println("");
+            System.out.println("Table inserted!");
+            DbConnect.closeConnection();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    //Load the payment history table dynamically according to a 'search criteria' by retrieving them from the database
+
+    private void loadPaymentHistory(String searchTerm) {
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `payment_history` WHERE reservation_id LIKE ? OR show_name LIKE ?");
+            stmt.setInt(1, Integer.parseInt(searchTerm));
+            stmt.setString(2, searchTerm);
+            ResultSet rs = stmt.executeQuery();
+            DefaultTableModel dtm = (DefaultTableModel) table_payment.getModel();
+            dtm.setRowCount(0);
+            while (rs.next()) {
+                //Create new vector for each record of the table
+                Vector v = new Vector();
+                v.add(rs.getString("reservation_id"));
+                v.add(rs.getString("show_name"));
+                v.add(rs.getString("total_amount"));
+                v.add(rs.getString("type"));
+                v.add(rs.getString("date"));
+                v.add(rs.getString("given"));
+                v.add(rs.getDouble("given") - rs.getDouble("total_amount"));
+                dtm.addRow(v);
+            }
+            DbConnect.closeConnection();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+//Load the payment types for the combo box for cb in the Admin-only payment tab
+    private void loadManagerPaymentType() {
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `payment_method`");
+            ResultSet rs = stmt.executeQuery();
+
+            //Creating a new vector to hold the values
+            Vector v1 = new Vector();
+            v1.add("Select");
+            while (rs.next()) {
+                v1.add(rs.getString("type"));
+            }
+            DefaultComboBoxModel dcbm = new DefaultComboBoxModel(v1);
+
+            //Admin-only payment history tab payment type combo-box
+            cb_pay_type.setModel(dcbm);
+
+            DbConnect.closeConnection();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+//Load the payment type for Admin-only payment combo box after selecting it from the table
+    private void loadManagerPaymentType(String type) {
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `payment_method` WHERE `type` =?");
+            stmt.setString(1, type);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                cb_pay_type.setSelectedItem(type);
+            }
+
+            DbConnect.closeConnection();
+        } catch (java.sql.SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+//Update function for payment data
+    private int updatePaymentData(String showName, JTimeChooser startTime, JTimeChooser endTime, JDateChooser showDate, String showImg, int showId) {
+        int rowCount = 0;
+        try {
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("UPDATE `show` SET `show_name`=?,`start_time`=?,`end_time`=?,`show_date`=?,`show_img`=? WHERE `show_id`=?");
+            stmt.setString(1, showName);
+            stmt.setTime(2, getSQLTime(startTime));
+            stmt.setTime(3, getSQLTime(endTime));
+            stmt.setDate(4, getSQLDate(showDate));
+            stmt.setString(5, showImg);
+            stmt.setInt(6, showId);
+
+            //Stores the amount of rows inserted after successful query exceution
+            rowCount = stmt.executeUpdate();
+
+            DbConnect.closeConnection();
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
+
+        return rowCount;
+    }
+
+// Delete function for payment data
+    private int deletePaymentData(int showId) {
+        int rowCount = 0;
+        try {
+            //Initially delete all tickets with the same showId (Foriegn Key constraint)
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("DELETE FROM `ticket` WHERE `show_id` =?");
+            stmt.setInt(1, showId);
+            rowCount = stmt.executeUpdate();
+
+            //Delete all tickets with the same showId (Foriegn Key constraint)
+            PreparedStatement stmt1 = DbConnect.createConnection().prepareStatement("DELETE FROM `show` WHERE `show_id` =?");
+            stmt1.setInt(1, showId);
+            rowCount += stmt.executeUpdate();
+
+            DbConnect.closeConnection();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return rowCount; //The ideal row count should be 2, but there could be instances where tickets with the show id will not exist then the row count will be 1
+    }
+//------------------------------------------------------------------------------    
 //                              Seat Booking - (Dashboard)
 //------------------------------------------------------------------------------
 
 //Clear some fields in the Dashboard (Seat booking)
-    private void clearSeatFields() {
+    public void clearSeatFields() {
         label_book_total.setText("0.0");
         label_book_balance.setText("0.0");
         tf_book_payment.setText("");
@@ -481,7 +639,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
     public final void initSeatAvailability() {
         if (this.seatMap != null) { //There exists seat map object and occupied seats array
             if (this.seatMap.getOccupiedSeats().length != 0) {
-                System.out.println("Occupied seats length: "+this.seatMap.getOccupiedSeats().length);
                 //using the occupied seats JButton Array List, change the colors of the buttons to red.
                 String[] occupiedSeatsArr = this.seatMap.getOccupiedSeats();
                 for (JButton btn : getButtonArray(occupiedSeatsArr)) {
@@ -589,6 +746,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Select a Seat type!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
             try {
+
                 String seatType = cb_book_type.getSelectedItem().toString();
                 //Get details related to the seat type (Adult/Child/Student)
                 PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `seat_type` WHERE `name` = ? ");
@@ -622,165 +780,11 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
         return Boolean.FALSE;
     }
-//------------------------------------------------------------------------------    
-//                              Payment-(History)
-//------------------------------------------------------------------------------ 
 
-    /*
-    The view created for the table with multiple inner joins
-    
-    CREATE VIEW payment_history AS
-    SELECT 
-    s.`show_id` AS sid,s.`show_name`,s.`start_time`,s.`end_time`,s.`show_date`,s.`employee_id` AS sempid,
-    r.`id` AS rid,r.`r_date`,r.`r_time`,r.`employee_id` AS rempid,r.`show_id` AS rsid,r.`ticket_id`,
-    p.`id` AS pid,p.`given`,p.`total_amount`,p.`date`,p.`payment_method_id`,p.`reservation_id`,
-    pm.`id` AS pmid,pm.`type`
-    FROM `show` s
-    INNER JOIN `reservation` r ON s.show_id = r.show_id
-    INNER JOIN `payment` p ON r.id = p.reservation_id
-    INNER JOIN `payment_method` pm ON p.payment_method_id = pm.id
-    
-     */
-    //Load the payment history table
-    private void loadPaymentHistory() {
-        try {
-            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `payment_history`");
-            ResultSet rs = stmt.executeQuery();
-            DefaultTableModel dtm = (DefaultTableModel) table_payment.getModel();
-            dtm.setRowCount(0);
-            while (rs.next()) {
-                //Create new vector for each record of the table
-                Vector v = new Vector();
-                v.add(rs.getString("p.reservation_id"));
-                v.add(rs.getString("s.show_name"));
-                v.add(rs.getString("p.total_amount"));
-                v.add(rs.getString("pm.type"));
-                v.add(rs.getString("p.date"));
-                v.add(rs.getString("p.given"));
-                v.add(rs.getDouble("p.given") - rs.getDouble("p.total_amount"));
-                dtm.addRow(v);
-            }
-            DbConnect.closeConnection();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    //Load the payment history table dynamically according to a 'search criteria' by retrieving them from the database
-
-    private void loadPaymentHistory(String searchTerm) {
-        try {
-            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `payment_history` WHERE p.reservation_id LIKE ? OR s.show_name LIKE ?");
-            stmt.setInt(1, Integer.parseInt(searchTerm));
-            stmt.setString(2, searchTerm);
-            ResultSet rs = stmt.executeQuery();
-            DefaultTableModel dtm = (DefaultTableModel) table_payment.getModel();
-            dtm.setRowCount(0);
-            while (rs.next()) {
-                //Create new vector for each record of the table
-                Vector v = new Vector();
-                v.add(rs.getString("p.reservation_id"));
-                v.add(rs.getString("s.show_name"));
-                v.add(rs.getString("p.total_amount"));
-                v.add(rs.getString("pm.type"));
-                v.add(rs.getString("p.date"));
-                v.add(rs.getString("p.given"));
-                v.add(rs.getDouble("p.given") - rs.getDouble("p.total_amount"));
-                dtm.addRow(v);
-            }
-            DbConnect.closeConnection();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
-//Load the payment types for the combo box for cb in the Admin-only payment tab
-    private void loadAdminPaymentType() {
-        try {
-            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `payment_method`");
-            ResultSet rs = stmt.executeQuery();
-
-            //Creating a new vector to hold the values
-            Vector v1 = new Vector();
-            v1.add("Select");
-            while (rs.next()) {
-                v1.add(rs.getString("type"));
-            }
-            DefaultComboBoxModel dcbm = new DefaultComboBoxModel(v1);
-
-            //Admin-only payment history tab payment type combo-box
-            cb_pay_type.setModel(dcbm);
-
-            DbConnect.closeConnection();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-//Load the payment type for Admin-only payment combo box after selecting it from the table
-    private void loadAdminPaymentType(String type) {
-        try {
-            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `payment_method` WHERE `type` =?");
-            stmt.setString(1, type);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                cb_pay_type.setSelectedItem(type);
-            }
-
-            DbConnect.closeConnection();
-        } catch (java.sql.SQLException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-//Update function for payment data
-    private int updatePaymentData(String showName, JTimeChooser startTime, JTimeChooser endTime, JDateChooser showDate, String showImg, int showId) {
-        int rowCount = 0;
-        try {
-            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("UPDATE `show` SET `show_name`=?,`start_time`=?,`end_time`=?,`show_date`=?,`show_img`=? WHERE `show_id`=?");
-            stmt.setString(1, showName);
-            stmt.setTime(2, getSQLTime(startTime));
-            stmt.setTime(3, getSQLTime(endTime));
-            stmt.setDate(4, getSQLDate(showDate));
-            stmt.setString(5, showImg);
-            stmt.setInt(6, showId);
-
-            //Stores the amount of rows inserted after successful query exceution
-            rowCount = stmt.executeUpdate();
-
-            DbConnect.closeConnection();
-        } catch (java.sql.SQLException e) {
-            e.printStackTrace();
-        }
-
-        return rowCount;
-    }
-
-// Delete function for payment data
-    private int deletePaymentData(int showId) {
-        int rowCount = 0;
-        try {
-            //Initially delete all tickets with the same showId (Foriegn Key constraint)
-            PreparedStatement stmt = DbConnect.createConnection().prepareStatement("DELETE FROM `ticket` WHERE `show_id` =?");
-            stmt.setInt(1, showId);
-            rowCount = stmt.executeUpdate();
-
-            //Delete all tickets with the same showId (Foriegn Key constraint)
-            PreparedStatement stmt1 = DbConnect.createConnection().prepareStatement("DELETE FROM `show` WHERE `show_id` =?");
-            stmt1.setInt(1, showId);
-            rowCount += stmt.executeUpdate();
-
-            DbConnect.closeConnection();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return rowCount; //The ideal row count should be 2, but there could be instances where tickets with the show id will not exist then the row count will be 1
-    }
 //------------------------------------------------------------------------------    
 //                              Dashboard
 //------------------------------------------------------------------------------
     //Function to retrieve the img url related to a show_id
-
     private String getImageUrl(int showId) {
         String path = "/images/imports/default.png";
         try {
@@ -826,15 +830,16 @@ public class dashBoard_gui extends javax.swing.JFrame {
 //Access control (Depending on user-role)
     public dashBoard_gui(int loginType, int currentEmployeeId, String uname, int currentUserRoleId) {
         initComponents();
+
         //Initializing the private arrays created
         this.seatArr = new String[]{"A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12", "A13", "A14"};
         this.labelArr = new JLabel[]{label_dashboard_1, label_dashboard_2, label_dashboard_3, label_dashboard_4, label_dashboard_5, label_dashboard_6};
 
         //initializing other private varaibles
-        this.labelLoopCount = 0;
+        this.labelLoopCount = 0; //Counter that is used to loop though the labels (dashboard) to set icons
         this.seatPanel = seats_panel; //Set the seat panel object to a private variable for ease-of-use
 
-        //Custom Action-Listerners
+        //Custom Action-Listerners - Listen to the change in rows in the "table_book" and execute the "updateTotal" function every time
         table_book.getModel().addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
@@ -858,6 +863,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         //Creating a seatMap for the show that is first in line to be viewed.
         this.seatMap = new SeatMap(getShowIdArray().get(0), this); // Creating a new seat map object, that has the Hash Map for the seating information
         initSeatAvailability(); //Seat color change for occupied seats, since we have a seatMap object created
+        label_book_showid.setText(getShowIdArray().get(0).toString());
 
         label_uname.setText(uname);
         tf_emp_id.setEnabled(false);
@@ -871,14 +877,16 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 jtp.setEnabledAt(3, false);
             }
             case 2 -> { //Administrator logged in, initialiations. can't see payment history tab
+                System.out.println("Admin logged in");
                 loadEmployeeTable();
                 loadEmployeeRoles();
                 btn_payment.setEnabled(false);
                 jtp.setEnabledAt(3, false);
             }
             case 3 -> { // Manager logged in. can see all tabs
+                System.out.println("Manager logged in");
                 loadPaymentHistory();
-                loadAdminPaymentType();
+                loadManagerPaymentType();
                 tf_pay_id.setEnabled(false);
                 tf_pay_balance.setEnabled(false);
             }
@@ -1247,6 +1255,11 @@ public class dashBoard_gui extends javax.swing.JFrame {
         btn_book.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
         btn_book.setForeground(new java.awt.Color(255, 255, 255));
         btn_book.setText("BOOK");
+        btn_book.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_bookActionPerformed(evt);
+            }
+        });
         jPanel4.add(btn_book, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 660, 260, 70));
 
         btn_book_receipt.setBackground(new java.awt.Color(0, 102, 153));
@@ -2541,20 +2554,19 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
     private void table_paymentMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_table_paymentMouseClicked
         if (evt.getClickCount() == 2) {
-            int r = table_show.getSelectedRow();
+            int r = table_payment.getSelectedRow();
             if (r != -1) {
-                tf_pay_id.setText(table_show.getValueAt(r, 0).toString());
-                tf_pay_showname.setText(table_show.getValueAt(r, 1).toString());
-                tf_pay_total.setText(table_show.getValueAt(r, 2).toString());
-                loadPaymentType();
-                //table_show.getValueAt(r, 4).toString()
+                tf_pay_id.setText(table_payment.getValueAt(r, 0).toString());
+                tf_pay_showname.setText(table_payment.getValueAt(r, 1).toString());
+                tf_pay_total.setText(table_payment.getValueAt(r, 2).toString());
+                loadManagerPaymentType(table_payment.getValueAt(r, 3).toString());
                 try {
-                    dc_pay_date.setDate(new SimpleDateFormat("yyyy-MM-dd").parse((String) table_show.getValueAt(r, 5)));
+                    dc_pay_date.setDate(new SimpleDateFormat("yyyy-MM-dd").parse((String) table_payment.getValueAt(r, 4)));
                 } catch (ParseException ex) {
                     ex.printStackTrace();
                 }
-                tf_pay_given.setText(table_show.getValueAt(r, 6).toString());
-                tf_pay_balance.setText(table_show.getValueAt(r, 7).toString());
+                tf_pay_given.setText(table_payment.getValueAt(r, 5).toString());
+                tf_pay_balance.setText(table_payment.getValueAt(r, 6).toString());
             }
         }
 
@@ -2734,7 +2746,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private void btn_a3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a3ActionPerformed
         //Check if Seat is available
         String seatNo = btn_a3.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
             //Call the "addSeat" function to add the details into the booking list table in the dashboard
             addSeat(seatNo);
         }
@@ -2743,7 +2755,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private void btn_a7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a7ActionPerformed
         //Check if Seat is available
         String seatNo = btn_a7.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
             //Call the "addSeat" function to add the details into the booking list table in the dashboard
             addSeat(seatNo);
         }
@@ -2752,7 +2764,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private void btn_a6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a6ActionPerformed
         //Check if Seat is available
         String seatNo = btn_a6.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
             //Call the "addSeat" function to add the details into the booking list table in the dashboard
             addSeat(seatNo);
         }
@@ -2761,7 +2773,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private void btn_a5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a5ActionPerformed
         //Check if Seat is available
         String seatNo = btn_a5.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
             //Call the "addSeat" function to add the details into the booking list table in the dashboard
             addSeat(seatNo);
         }
@@ -2770,7 +2782,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private void btn_a1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a1ActionPerformed
         //Check if Seat is available
         String seatNo = btn_a1.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
             //Call the "addSeat" function to add the details into the booking list table in the dashboard
             addSeat(seatNo);
         }
@@ -2779,7 +2791,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private void btn_a2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a2ActionPerformed
         //Check if Seat is available
         String seatNo = btn_a2.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
             //Call the "addSeat" function to add the details into the booking list table in the dashboard
             addSeat(seatNo);
         }
@@ -2788,7 +2800,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private void btn_a4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a4ActionPerformed
         //Check if Seat is available
         String seatNo = btn_a4.getText();
-        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
             //Call the "addSeat" function to add the details into the booking list table in the dashboard
             addSeat(seatNo);
         }
@@ -2806,12 +2818,12 @@ public class dashBoard_gui extends javax.swing.JFrame {
         if (!tf_book_payment.getText().isEmpty()) {
             label_book_balance.setForeground(new Color(102, 102, 255));
             try {
-                double given = Double.parseDouble(tf_book_payment.getText().toString());
-                double total = Double.parseDouble(label_book_total.getText().toString());
+                double given = Double.parseDouble(tf_book_payment.getText());
+                double total = Double.parseDouble(label_book_total.getText());
                 String value = String.valueOf(given - total);
 
                 label_book_balance.setText((value));
-            } catch (Exception e) {
+            } catch (NumberFormatException e) {
                 label_book_balance.setForeground(Color.red);
                 label_book_balance.setText("Invalid");
             }
@@ -2862,37 +2874,158 @@ public class dashBoard_gui extends javax.swing.JFrame {
     }//GEN-LAST:event_btn_employeeMouseClicked
 
     private void btn_a8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a8ActionPerformed
-        // TODO add your handling code here:
+        //Check if Seat is available
+        String seatNo = btn_a8.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
+        }
     }//GEN-LAST:event_btn_a8ActionPerformed
 
     private void btn_a9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a9ActionPerformed
-        // TODO add your handling code here:
+        //Check if Seat is available
+        String seatNo = btn_a9.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
+        }
     }//GEN-LAST:event_btn_a9ActionPerformed
 
     private void btn_a10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a10ActionPerformed
-        // TODO add your handling code here:
+        //Check if Seat is available
+        String seatNo = btn_a10.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
+        }
     }//GEN-LAST:event_btn_a10ActionPerformed
 
     private void btn_a11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a11ActionPerformed
-        // TODO add your handling code here:
+        //Check if Seat is available
+        String seatNo = btn_a11.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
+        }
     }//GEN-LAST:event_btn_a11ActionPerformed
 
     private void btn_a12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a12ActionPerformed
-        // TODO add your handling code here:
+        //Check if Seat is available
+        String seatNo = btn_a12.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
+        }
     }//GEN-LAST:event_btn_a12ActionPerformed
 
     private void btn_a13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a13ActionPerformed
-        // TODO add your handling code here:
+        //Check if Seat is available
+        String seatNo = btn_a13.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
+        }
     }//GEN-LAST:event_btn_a13ActionPerformed
 
     private void btn_a14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_a14ActionPerformed
-        // TODO add your handling code here:
+        //Check if Seat is available
+        String seatNo = btn_a14.getText();
+        if (!checkSeatDupplicateEntry(seatNo) && !label_book_showid.getText().isEmpty() && this.seatMap.getAvailability(seatNo)) { //It will send a "false" if the seat is already "booked"/"occupied"
+            //Call the "addSeat" function to add the details into the booking list table in the dashboard
+            addSeat(seatNo);
+        }
     }//GEN-LAST:event_btn_a14ActionPerformed
+
+    private void btn_bookActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_bookActionPerformed
+        if (label_book_showid.getText().equals("N/A")) {
+            JOptionPane.showMessageDialog(this, "Show must be selected!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (table_book.getModel().getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "Please select seats to proceed!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (cb_book_paymenttype.getSelectedItem().equals("Select")) {
+            JOptionPane.showMessageDialog(this, "Please select the payment method!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (tf_book_payment.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter the payement amount!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else if (label_book_balance.getText().equals("Invalid") || Double.parseDouble(tf_book_payment.getText()) < 0 || (Double.parseDouble(label_book_total.getText()) > Double.parseDouble(tf_book_payment.getText()))) {
+            JOptionPane.showMessageDialog(this, "Invalid Payment!", "Warning", JOptionPane.WARNING_MESSAGE);
+        } else {
+            DefaultTableModel dtm = (DefaultTableModel) table_book.getModel();
+            int r = dtm.getRowCount(); // Keeping the amount of rows of the table
+            for (int i = 1; i <= r; i++) { //Iterate thorugh each row inserting the data into the database.
+                try {
+                    //Get the "ticket_id" related to a certain "seat_no" and "seat_type" combination
+                    //PS: The "ticket_id" information with the respective relationships SHOULD exists in the database for this process to succeed.
+                    String query = """
+                               SELECT t.id AS tid, s.seat_id AS sid, s.seat_no, st.id AS stid, st.price, st.name
+                               FROM `ticket` t
+                               INNER JOIN `seat` s ON t.seat_id = s.seat_id
+                               INNER JOIN `seat_type` st ON t.seat_type_id = st.id
+                               WHERE seat_no = ? AND name = ?
+                               ORDER BY s.seat_no ASC
+                               """;
+                    PreparedStatement stmt = DbConnect.createConnection().prepareStatement(query);
+                    stmt.setString(1, dtm.getValueAt(i, 0).toString());
+                    stmt.setString(2, dtm.getValueAt(i, 1).toString());
+                    ResultSet rs = stmt.executeQuery();
+
+                    if (rs.next()) { //has a ticket with the above combination
+                        //Insert the data into the database
+                        String sql = "INSERT INTO `reservation`(r_date,r_time,employee_id,show_id,ticket_id) VALUES(?,?,?,?,?)";
+                        PreparedStatement stmt_reservation = DbConnect.createConnection().prepareStatement(sql,PreparedStatement.RETURN_GENERATED_KEYS);
+                        stmt_reservation.setDate(1, java.sql.Date.valueOf(LocalDate.now()));
+                        stmt_reservation.setTime(2, Time.valueOf(LocalTime.now()));
+                        stmt_reservation.setInt(3, this.currentEmployeeId);
+                        stmt_reservation.setInt(4, Integer.parseInt(label_book_showid.getText()));
+                        stmt_reservation.setInt(5, rs.getInt("tid"));
+
+                        int affectedRows = stmt_reservation.executeUpdate(sql, PreparedStatement.RETURN_GENERATED_KEYS); //Get the affected row count, to check if the insert was successfull. User is not alerted till last step unless there is an error
+                        if (affectedRows == 0) {
+                            JOptionPane.showMessageDialog(this, "Data was not entered correctly! Please contact an Admin.", "Warning", JOptionPane.WARNING_MESSAGE);
+                        } else { //Insert successfull
+
+                            ResultSet rs_genkeys = stmt_reservation.getGeneratedKeys(); //To get the inserted ID (reservation-ID that was just inserted above)
+                            if (rs_genkeys.next()) { //Validation to see whether the insert was succesfully and then to retrieve it and use it to insert data into the 'payment' table
+                                //Insert the data into the database
+                                PreparedStatement stmt_payment = DbConnect.createConnection().prepareStatement("INSERT INTO `payment`(given,total_amount,date,payment_method_id,reservation_id) VALUES(?,?,?,?,?)");
+                                try {
+                                    stmt_payment.setDouble(1, Double.parseDouble(tf_book_payment.getText()));
+                                    stmt_payment.setDouble(2, Double.parseDouble(tf_book_payment.getText()));
+                                    stmt_payment.setDate(3, java.sql.Date.valueOf(LocalDate.now()));
+                                    stmt_payment.setInt(4, cb_book_paymenttype.getSelectedIndex());
+                                    stmt_payment.setInt(5, rs.getInt(1)); //Get the genereated ID from the reservation table input and set it
+
+                                    int rowCount = stmt_payment.executeUpdate(); //Get the affected row count, to check if the insert was successfull. If so, alert user
+
+                                    if (rowCount == 0) { //Inserts were unsuccessfull
+                                        JOptionPane.showMessageDialog(this, "Data was not entered correctly! Please contact an Admin.", "Warning", JOptionPane.WARNING_MESSAGE);
+                                    } else { //Successful Insert
+                                        JOptionPane.showMessageDialog(this, "Data added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                                    }
+
+                                } catch (NumberFormatException e) {
+                                    e.printStackTrace();
+                                }catch(java.sql.SQLException e){
+                                    e.printStackTrace();
+                                }catch(Exception e){
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }
+
+                    clearSeatFields();
+                    DbConnect.closeConnection();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+    }//GEN-LAST:event_btn_bookActionPerformed
 
     public static void main(String args[]) {
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
-        } catch (Exception e) {
+        } catch (UnsupportedLookAndFeelException e) {
             e.printStackTrace();
         }
         java.awt.EventQueue.invokeLater(new Runnable() {

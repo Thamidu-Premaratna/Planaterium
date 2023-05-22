@@ -5,10 +5,9 @@ import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.Color;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Vector;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.DefaultTableModel;
 import model.DbConnect;
 
@@ -16,8 +15,6 @@ public class show_select_gui extends javax.swing.JFrame {
 
 //Private variables
     private dashBoard_gui dashboard;
-    private SeatMap seatMap;
-    private String[] seatArr;
 
 //Load the show table dynamically by retrieving them from the database
     private void loadShowTable() {
@@ -72,8 +69,6 @@ public class show_select_gui extends javax.swing.JFrame {
 
     public show_select_gui(dashBoard_gui dash) {
         this.dashboard = dash;
-        this.seatMap = dashboard.getSeatMap();
-        this.seatArr = dashboard.getSeatArr();
         initComponents();
         loadShowTable();
     }
@@ -232,6 +227,7 @@ public class show_select_gui extends javax.swing.JFrame {
         int r = table_extrashow.getSelectedRow();
         if (r != -1) {
             String showId = table_extrashow.getValueAt(r, 0).toString();
+            dashboard.clearSeatFields();
             dashboard.label_book_showid.setText(showId);
             dashboard.setSeatMap(new SeatMap(Integer.parseInt(showId), dashboard));// Create new seatMap object replacing the previous one
             dashboard.initSeatAvailability(); //Edit the seat colors to the selected show
@@ -252,6 +248,7 @@ public class show_select_gui extends javax.swing.JFrame {
             int r = table_extrashow.getSelectedRow();
             if (r != -1) {
                 String showId = table_extrashow.getValueAt(r, 0).toString();
+                dashboard.clearSeatFields();
                 dashboard.label_book_showid.setText(showId);
                 dashboard.setSeatMap(new SeatMap(Integer.parseInt(showId), dashboard));// Create new seatMap object replacing the previous one
                 dashboard.initSeatAvailability(); //Edit the seat colors to the selected show
@@ -266,7 +263,7 @@ public class show_select_gui extends javax.swing.JFrame {
     public static void main(String args[]) {
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
-        } catch (Exception e) {
+        } catch (UnsupportedLookAndFeelException e) {
             e.printStackTrace();
         }
         java.awt.EventQueue.invokeLater(new Runnable() {
