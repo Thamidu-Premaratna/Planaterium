@@ -53,6 +53,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
 //                              Common methods
 //------------------------------------------------------------------------------ 
 //Getters and setters for some private variables
+
     public SeatMap getSeatMap() {
         return this.seatMap;
     }
@@ -467,7 +468,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     CREATE VIEW payment_history AS
     SELECT 
     s.`show_id` AS sid,s.`show_name`,s.`start_time`,s.`end_time`,s.`show_date`,s.`employee_id` AS sempid,
-    r.`id` AS rid,r.`r_date`,r.`r_time`,r.`employee_id` AS rempid,r.`show_id` AS rsid,r.`ticket_id`,
+    r.`id` AS rid,r.`r_date`,r.`r_time`,r.`employee_id` AS rempid,r.`show_id` AS rsid,
     p.`id` AS pid,p.`given`,p.`total_amount`,p.`date`,p.`payment_method_id`,p.`reservation_id`,
     pm.`id` AS pmid,pm.`type`
     FROM `show` s
@@ -734,13 +735,14 @@ public class dashBoard_gui extends javax.swing.JFrame {
         /*
         CREATE VIEW seat_map AS
         SELECT 
-        r.id AS rid, r.r_date, r.r_time,r.employee_id,r.show_id,r.ticket_id,
+        r.id AS rid, r.r_date, r.r_time,r.employee_id,r.show_id,
         t.id AS tid,s.seat_id AS sid,s.seat_no,
         st.id AS stid,st.price,st.name
         FROM `reservation` r
-        INNER JOIN `ticket` t ON r.ticket_id = t.id
+        INNER JOIN `ticket_has_reservation` thr ON r.id = thr.reservation_id
+        INNER JOIN `ticket` t ON thr.ticket_id = t.id
         INNER JOIN `seat` s ON t.seat_id = s.seat_id
-        INNER JOIN `seat_type` st ON t.seat_type_id = st.id 
+        INNER JOIN `seat_type` st ON t.seat_type_id = st.id
          */
         if (cb_book_type.getSelectedItem().toString().equals("Select")) {
             JOptionPane.showMessageDialog(this, "Select a Seat type!", "Warning", JOptionPane.WARNING_MESSAGE);
@@ -861,9 +863,11 @@ public class dashBoard_gui extends javax.swing.JFrame {
         this.currentUserRoleId = currentUserRoleId;
 
         //Creating a seatMap for the show that is first in line to be viewed.
-        this.seatMap = new SeatMap(getShowIdArray().get(0), this); // Creating a new seat map object, that has the Hash Map for the seating information
-        initSeatAvailability(); //Seat color change for occupied seats, since we have a seatMap object created
-        label_book_showid.setText(getShowIdArray().get(0).toString());
+        if (!getShowIdArray().isEmpty()) {
+            this.seatMap = new SeatMap(getShowIdArray().get(0), this); // Creating a new seat map object, that has the Hash Map for the seating information
+            initSeatAvailability(); //Seat color change for occupied seats, since we have a seatMap object created
+            label_book_showid.setText(getShowIdArray().get(0).toString());
+        }
 
         label_uname.setText(uname);
         tf_emp_id.setEnabled(false);
@@ -877,14 +881,12 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 jtp.setEnabledAt(3, false);
             }
             case 2 -> { //Administrator logged in, initialiations. can't see payment history tab
-                System.out.println("Admin logged in");
                 loadEmployeeTable();
                 loadEmployeeRoles();
                 btn_payment.setEnabled(false);
                 jtp.setEnabledAt(3, false);
             }
             case 3 -> { // Manager logged in. can see all tabs
-                System.out.println("Manager logged in");
                 loadPaymentHistory();
                 loadManagerPaymentType();
                 tf_pay_id.setEnabled(false);
@@ -2948,13 +2950,47 @@ public class dashBoard_gui extends javax.swing.JFrame {
         } else if (label_book_balance.getText().equals("Invalid") || Double.parseDouble(tf_book_payment.getText()) < 0 || (Double.parseDouble(label_book_total.getText()) > Double.parseDouble(tf_book_payment.getText()))) {
             JOptionPane.showMessageDialog(this, "Invalid Payment!", "Warning", JOptionPane.WARNING_MESSAGE);
         } else {
-            DefaultTableModel dtm = (DefaultTableModel) table_book.getModel();
-            int r = dtm.getRowCount(); // Keeping the amount of rows of the table
-            for (int i = 1; i <= r; i++) { //Iterate thorugh each row inserting the data into the database.
-                try {
-                    //Get the "ticket_id" related to a certain "seat_no" and "seat_type" combination
-                    //PS: The "ticket_id" information with the respective relationships SHOULD exists in the database for this process to succeed.
-                    String query = """
+
+            int reservation_id = 0;  //Variable that will hold the reservation insert-id. This will be used for data inserts into the "ticket_has_reservation" table.
+            try {
+                String sql_query = "INSERT INTO `reservation`(r_date,r_time,employee_id,show_id) VALUES(?,?,?,?)";
+                PreparedStatement stmt_reservation = DbConnect.createConnection().prepareStatement(sql_query, PreparedStatement.RETURN_GENERATED_KEYS);
+                stmt_reservation.setDate(1, java.sql.Date.valueOf(LocalDate.now()));
+                stmt_reservation.setTime(2, Time.valueOf(LocalTime.now()));
+                stmt_reservation.setInt(3, this.currentEmployeeId);
+                stmt_reservation.setInt(4, Integer.parseInt(label_book_showid.getText()));
+                int rows = stmt_reservation.executeUpdate();
+
+                ResultSet rs_key = stmt_reservation.getGeneratedKeys(); //To get the inserted ID (reservation-ID that was just inserted above)
+                if (rs_key.next()) { //Insert was successful and there exists the insert-id (unique key) of that record
+                    reservation_id = rs_key.getInt(1);
+                }
+
+                if (rows == 0) { //O rows were affected by the prev. insert. Which means it has failed.
+                    JOptionPane.showMessageDialog(this, "Data was not inserted correctly! Please contact an Admin.", "Warning", JOptionPane.WARNING_MESSAGE);
+                } else { // successful insert
+                    //Insert the data into the database
+                    PreparedStatement stmt_payment = DbConnect.createConnection().prepareStatement("INSERT INTO `payment`(given,total_amount,date,payment_method_id,reservation_id) VALUES(?,?,?,?,?)");
+                    stmt_payment.setDouble(1, Double.parseDouble(tf_book_payment.getText()));
+                    stmt_payment.setDouble(2, Double.parseDouble(label_book_total.getText()));
+                    stmt_payment.setDate(3, java.sql.Date.valueOf(LocalDate.now()));
+                    stmt_payment.setInt(4, cb_book_paymenttype.getSelectedIndex());
+                    stmt_payment.setInt(5, reservation_id); //Get the genereated ID from the reservation table input and set it
+
+                    int rowCount = stmt_payment.executeUpdate(); //Get the affected row count, to check if the insert was successfull. If so, alert user
+
+                    if (rowCount == 0) { //Inserts were unsuccessful
+                        JOptionPane.showMessageDialog(this, "Data was not entered correctly! Please contact an Admin.", "Warning", JOptionPane.WARNING_MESSAGE);
+                    } else { //Inserts were successful
+                        DefaultTableModel dtm = (DefaultTableModel) table_book.getModel();
+                        int r = dtm.getRowCount(); // Keeping the amount of rows of the table
+
+                        System.out.println(r);
+
+                        for (int i = 0; i < r; i++) { //Iterate thorugh each row inserting the data into the database.
+                            //Get the "ticket_id" related to a certain "seat_no" and "seat_type" combination
+                            //PS: The "ticket_id" information with the respective relationships SHOULD exists in the database for this process to succeed.
+                            String query = """
                                SELECT t.id AS tid, s.seat_id AS sid, s.seat_no, st.id AS stid, st.price, st.name
                                FROM `ticket` t
                                INNER JOIN `seat` s ON t.seat_id = s.seat_id
@@ -2962,61 +2998,43 @@ public class dashBoard_gui extends javax.swing.JFrame {
                                WHERE seat_no = ? AND name = ?
                                ORDER BY s.seat_no ASC
                                """;
-                    PreparedStatement stmt = DbConnect.createConnection().prepareStatement(query);
-                    stmt.setString(1, dtm.getValueAt(i, 0).toString());
-                    stmt.setString(2, dtm.getValueAt(i, 1).toString());
-                    ResultSet rs = stmt.executeQuery();
+                            PreparedStatement stmt = DbConnect.createConnection().prepareStatement(query);
+                            stmt.setString(1, dtm.getValueAt(i, 0).toString());
+                            stmt.setString(2, dtm.getValueAt(i, 1).toString());
+                            ResultSet rs = stmt.executeQuery();
 
-                    if (rs.next()) { //has a ticket with the above combination
-                        //Insert the data into the database
-                        String sql = "INSERT INTO `reservation`(r_date,r_time,employee_id,show_id,ticket_id) VALUES(?,?,?,?,?)";
-                        PreparedStatement stmt_reservation = DbConnect.createConnection().prepareStatement(sql,PreparedStatement.RETURN_GENERATED_KEYS);
-                        stmt_reservation.setDate(1, java.sql.Date.valueOf(LocalDate.now()));
-                        stmt_reservation.setTime(2, Time.valueOf(LocalTime.now()));
-                        stmt_reservation.setInt(3, this.currentEmployeeId);
-                        stmt_reservation.setInt(4, Integer.parseInt(label_book_showid.getText()));
-                        stmt_reservation.setInt(5, rs.getInt("tid"));
-
-                        int affectedRows = stmt_reservation.executeUpdate(sql, PreparedStatement.RETURN_GENERATED_KEYS); //Get the affected row count, to check if the insert was successfull. User is not alerted till last step unless there is an error
-                        if (affectedRows == 0) {
-                            JOptionPane.showMessageDialog(this, "Data was not entered correctly! Please contact an Admin.", "Warning", JOptionPane.WARNING_MESSAGE);
-                        } else { //Insert successfull
-
-                            ResultSet rs_genkeys = stmt_reservation.getGeneratedKeys(); //To get the inserted ID (reservation-ID that was just inserted above)
-                            if (rs_genkeys.next()) { //Validation to see whether the insert was succesfully and then to retrieve it and use it to insert data into the 'payment' table
+                            if (rs.next()) { //has a ticket with the above combination
                                 //Insert the data into the database
-                                PreparedStatement stmt_payment = DbConnect.createConnection().prepareStatement("INSERT INTO `payment`(given,total_amount,date,payment_method_id,reservation_id) VALUES(?,?,?,?,?)");
-                                try {
-                                    stmt_payment.setDouble(1, Double.parseDouble(tf_book_payment.getText()));
-                                    stmt_payment.setDouble(2, Double.parseDouble(tf_book_payment.getText()));
-                                    stmt_payment.setDate(3, java.sql.Date.valueOf(LocalDate.now()));
-                                    stmt_payment.setInt(4, cb_book_paymenttype.getSelectedIndex());
-                                    stmt_payment.setInt(5, rs.getInt(1)); //Get the genereated ID from the reservation table input and set it
+                                String sql = "INSERT INTO `ticket_has_reservation`(ticket_id,reservation_id) VALUES(?,?)";
+                                PreparedStatement stmt2 = DbConnect.createConnection().prepareStatement(sql);
+                                stmt2.setInt(1, rs.getInt("tid"));
+                                stmt2.setInt(2, reservation_id);
 
-                                    int rowCount = stmt_payment.executeUpdate(); //Get the affected row count, to check if the insert was successfull. If so, alert user
+                                int affectedRows = stmt2.executeUpdate();
 
-                                    if (rowCount == 0) { //Inserts were unsuccessfull
-                                        JOptionPane.showMessageDialog(this, "Data was not entered correctly! Please contact an Admin.", "Warning", JOptionPane.WARNING_MESSAGE);
-                                    } else { //Successful Insert
-                                        JOptionPane.showMessageDialog(this, "Data added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                                    }
-
-                                } catch (NumberFormatException e) {
-                                    e.printStackTrace();
-                                }catch(java.sql.SQLException e){
-                                    e.printStackTrace();
-                                }catch(Exception e){
-                                    e.printStackTrace();
+                                if (affectedRows == 0) {
+                                    JOptionPane.showMessageDialog(this, "Data was not inserted correctly! Please contact an Admin.", "Warning", JOptionPane.WARNING_MESSAGE);
+                                    break;
                                 }
                             }
-                        }
-                    }
 
-                    clearSeatFields();
-                    DbConnect.closeConnection();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                        }
+                        JOptionPane.showMessageDialog(this, "Data added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    }
                 }
+                clearSeatFields(); //Clear all fields
+                this.seatMap = new SeatMap(Integer.parseInt(label_book_showid.getText()), this); //Update the seatMap
+                initSeatAvailability(); //Show the seat map
+                
+                DbConnect.closeConnection();
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Incorrect data entered!", "Warning", JOptionPane.WARNING_MESSAGE);
+                e.printStackTrace();
+            } catch (java.sql.SQLException e) {
+                JOptionPane.showMessageDialog(this, "Data was not inserted correctly! Please contact an Admin.", "Warning", JOptionPane.WARNING_MESSAGE);
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
         }

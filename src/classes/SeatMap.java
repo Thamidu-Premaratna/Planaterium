@@ -1,7 +1,6 @@
 package classes;
 
 import gui.dashBoard_gui;
-import java.awt.List;
 import java.util.HashMap;
 import java.util.Map;
 import model.DbConnect;
@@ -13,7 +12,7 @@ public class SeatMap {
 
     private final Map<String, Boolean> seatMap;
     private final String[] seatArr;
-    private dashBoard_gui dash;
+    private final dashBoard_gui dash;
 
     public SeatMap(int showId, dashBoard_gui dash) {
         seatMap = new HashMap<>();
@@ -45,11 +44,12 @@ public class SeatMap {
             /*
             CREATE VIEW seat_map AS
             SELECT 
-            r.id AS rid, r.r_date, r.r_time,r.employee_id,r.show_id,r.ticket_id,
+            r.id AS rid, r.r_date, r.r_time,r.employee_id,r.show_id,
             t.id AS tid,s.seat_id AS sid,s.seat_no,
             st.id AS stid,st.price,st.name
             FROM `reservation` r
-            INNER JOIN `ticket` t ON r.ticket_id = t.id
+            INNER JOIN `ticket_has_reservation` thr ON r.id = thr.reservation_id
+            INNER JOIN `ticket` t ON thr.ticket_id = t.id
             INNER JOIN `seat` s ON t.seat_id = s.seat_id
             INNER JOIN `seat_type` st ON t.seat_type_id = st.id
              */
