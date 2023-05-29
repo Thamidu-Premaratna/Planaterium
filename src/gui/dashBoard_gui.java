@@ -53,7 +53,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
 //                              Common methods
 //------------------------------------------------------------------------------ 
 //Getters and setters for some private variables
-
     public SeatMap getSeatMap() {
         return this.seatMap;
     }
@@ -869,6 +868,12 @@ public class dashBoard_gui extends javax.swing.JFrame {
             label_book_showid.setText(getShowIdArray().get(0).toString());
         }
 
+        jtp.setEnabledAt(4, false);
+        jtp.setEnabledAt(3, false);
+        jtp.setEnabledAt(2, false);
+        jtp.setEnabledAt(1, false);
+        jtp.setEnabledAt(0, false);
+
         label_uname.setText(uname);
         tf_emp_id.setEnabled(false);
         tf_show_id.setEditable(false);
@@ -877,14 +882,11 @@ public class dashBoard_gui extends javax.swing.JFrame {
             case 1 -> { // Receptionist logged in, initializations. can't see payment history and employee tabs
                 btn_employee.setEnabled(false);
                 btn_payment.setEnabled(false);
-                jtp.setEnabledAt(4, false);
-                jtp.setEnabledAt(3, false);
             }
             case 2 -> { //Administrator logged in, initialiations. can't see payment history tab
                 loadEmployeeTable();
                 loadEmployeeRoles();
                 btn_payment.setEnabled(false);
-                jtp.setEnabledAt(3, false);
             }
             case 3 -> { // Manager logged in. can see all tabs
                 loadPaymentHistory();
@@ -1036,7 +1038,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         btn_payment = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Planaterium App v1.0");
+        setTitle("PLANETO v1.0");
         setBackground(new java.awt.Color(255, 255, 255));
         setPreferredSize(new java.awt.Dimension(1920, 1080));
 
@@ -1046,7 +1048,9 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jPanel8.setBackground(java.awt.SystemColor.menu);
 
         btn_logout.setBackground(new java.awt.Color(255, 0, 0));
-        btn_logout.setText("Log Out");
+        btn_logout.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btn_logout.setForeground(new java.awt.Color(255, 255, 255));
+        btn_logout.setText("LOG OUT");
         btn_logout.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btn_logoutActionPerformed(evt);
@@ -1062,12 +1066,12 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jPanel8Layout.setHorizontalGroup(
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel8Layout.createSequentialGroup()
-                .addContainerGap(1272, Short.MAX_VALUE)
+                .addContainerGap(1229, Short.MAX_VALUE)
                 .addComponent(jLabel56, javax.swing.GroupLayout.PREFERRED_SIZE, 63, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(label_uname, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btn_logout)
+                .addComponent(btn_logout, javax.swing.GroupLayout.PREFERRED_SIZE, 115, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
             .addComponent(jSeparator1, javax.swing.GroupLayout.Alignment.TRAILING)
         );
@@ -1240,7 +1244,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         });
         JScrollPane.setViewportView(table_book);
 
-        jPanel4.add(JScrollPane, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 200, 380, 230));
+        jPanel4.add(JScrollPane, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 200, 380, 210));
 
         btn_book_clear.setBackground(new java.awt.Color(255, 0, 102));
         btn_book_clear.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
@@ -1251,7 +1255,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_book_clearActionPerformed(evt);
             }
         });
-        jPanel4.add(btn_book_clear, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 660, 80, 30));
+        jPanel4.add(btn_book_clear, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 650, 80, 30));
 
         btn_book.setBackground(new java.awt.Color(0, 204, 102));
         btn_book.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
@@ -1262,7 +1266,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_bookActionPerformed(evt);
             }
         });
-        jPanel4.add(btn_book, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 660, 260, 70));
+        jPanel4.add(btn_book, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 650, 260, 70));
 
         btn_book_receipt.setBackground(new java.awt.Color(0, 102, 153));
         btn_book_receipt.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
@@ -1273,7 +1277,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_book_receiptActionPerformed(evt);
             }
         });
-        jPanel4.add(btn_book_receipt, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 700, 80, 30));
+        jPanel4.add(btn_book_receipt, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 690, 80, 30));
 
         jPanel21.setBorder(javax.swing.BorderFactory.createTitledBorder("Summary"));
 
@@ -1342,13 +1346,13 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        jPanel4.add(jPanel21, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 490, 380, 160));
+        jPanel4.add(jPanel21, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 470, 380, 160));
 
         jLabel13.setText("Payment Type");
-        jPanel4.add(jLabel13, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 450, 90, 30));
+        jPanel4.add(jLabel13, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 430, 90, 30));
 
         cb_book_paymenttype.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Select" }));
-        jPanel4.add(cb_book_paymenttype, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 450, 100, 30));
+        jPanel4.add(cb_book_paymenttype, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 430, 100, 30));
 
         jButton1.setText("Delete Entry");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
@@ -1356,7 +1360,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 jButton1ActionPerformed(evt);
             }
         });
-        jPanel4.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(295, 450, 110, 30));
+        jPanel4.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(300, 430, 110, 30));
 
         seats_panel.add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(910, 0, 440, 750));
 
@@ -2262,7 +2266,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
         jPanel1.add(jtp, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 30, 1350, 780));
 
-        jPanel9.setBackground(new java.awt.Color(0, 153, 153));
+        jPanel9.setBackground(new java.awt.Color(141, 38, 135));
 
         btn_dashboard.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/icons8-billboard-23.png"))); // NOI18N
         btn_dashboard.setText("Dash Board");
@@ -2346,7 +2350,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jPanel9Layout.setVerticalGroup(
             jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel9Layout.createSequentialGroup()
-                .addGap(153, 153, 153)
+                .addGap(222, 222, 222)
                 .addComponent(btn_dashboard, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(btn_seats, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -2356,7 +2360,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addComponent(btn_payment, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(btn_employee, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(305, Short.MAX_VALUE))
+                .addContainerGap(236, Short.MAX_VALUE))
         );
 
         jPanel1.add(jPanel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 30, 180, 780));
@@ -3025,7 +3029,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 clearSeatFields(); //Clear all fields
                 this.seatMap = new SeatMap(Integer.parseInt(label_book_showid.getText()), this); //Update the seatMap
                 initSeatAvailability(); //Show the seat map
-                
+
                 DbConnect.closeConnection();
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(this, "Incorrect data entered!", "Warning", JOptionPane.WARNING_MESSAGE);
