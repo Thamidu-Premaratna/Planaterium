@@ -162,7 +162,42 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
 
     }
+//Load the employee table dynamically according to a 'search criteria' by retrieving them from the database
+    private void loadEmployeeTable(String searchTerm){
+        try {
+            String query = """
+                           SELECT *
+                           FROM `employee`
+                           INNER JOIN `role` ON `employee`.`role_id` = `role`.`id`
+                           INNER JOIN `status` ON `employee`.`status_id` = `status`.`id`
+                           WHERE `employee_id` LIKE ? OR `fname` LIKE ? OR `lname` LIKE ?
+                           """;
+            PreparedStatement stmt = DbConnect.createConnection().prepareStatement(query);
+            stmt.setString(1, searchTerm+"%");
+            stmt.setString(2, searchTerm+"%");
+            stmt.setString(3, searchTerm+"%");
+            ResultSet rs = stmt.executeQuery();
+            DefaultTableModel dtm = (DefaultTableModel) table_emp.getModel();
+            dtm.setRowCount(0);
+            while (rs.next()) {
+                //Create new vector for each record of the table
+                Vector v = new Vector();
+                v.add(rs.getString("employee_id"));
+                v.add(rs.getString("fname"));
+                v.add(rs.getString("lname"));
+                v.add(rs.getString("dob"));
+                v.add(rs.getString("mobile"));
+                v.add(rs.getString("address"));
+                v.add(rs.getString("role.type"));
+                v.add(rs.getString("status.name"));
+                dtm.addRow(v);
+            }
 
+            DbConnect.closeConnection();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 //Load the fields dynamically by retrieving them from the database
     private void loadEmployeeRoles() {
         try {
@@ -460,6 +495,12 @@ public class dashBoard_gui extends javax.swing.JFrame {
 //------------------------------------------------------------------------------    
 //                              Payment-(History)
 //------------------------------------------------------------------------------ 
+    //Refresh/Reload everything in payment tab
+
+    private void refreshPayment() {
+        loadPaymentHistory();
+
+    }
 
     /*
     The view created for the table with multiple inner joins
@@ -531,7 +572,25 @@ public class dashBoard_gui extends javax.swing.JFrame {
 
     }
 
-//Load the payment types for the combo box for cb in the Admin-only payment tab
+    //Update monthly earnings amount shown when the payment (history) table is modified/updated with data
+    private void updateEarnings() {
+        double total = 0.0;
+        LocalDate date = LocalDate.now(); //Get the current date
+        for (int row = 0; row < table_payment.getRowCount(); row++) {
+            String tableDate = table_payment.getValueAt(row, 4).toString(); //Get the date object of current row in table
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            java.time.LocalDateTime tableMonth = java.time.LocalDateTime.parse(tableDate, formatter);
+
+            //Compare both the current month and the row's month value (The total amount will be added to "total" varaible if the month value of both are same)
+            if (date.getMonthValue() == tableMonth.getMonthValue()) {
+                double amount = Double.parseDouble(table_payment.getValueAt(row, 2).toString());
+                total += amount; //Add the amount of each row (ticket) to the total   
+            }
+        }
+        label_earnings.setText(String.valueOf(total));
+    }
+
+    //Load the payment types for the combo box for cb in the  Manager-only payment tab
     private void loadManagerPaymentType() {
         try {
             PreparedStatement stmt = DbConnect.createConnection().prepareStatement("SELECT * FROM `payment_method`");
@@ -823,8 +882,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
 //------------------------------------------------------------------------------
 
     public dashBoard_gui() {
-        this.seatArr = new String[]{"A1", "A2", "A3", "A4", "A5", "A6", "A7"};
-        this.labelArr = new JLabel[]{label_dashboard_1, label_dashboard_2, label_dashboard_3, label_dashboard_4, label_dashboard_5, label_dashboard_6};
         initComponents();
     }
 
@@ -848,6 +905,17 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 if (e.getType() == TableModelEvent.INSERT || e.getType() == TableModelEvent.UPDATE
                         || e.getType() == TableModelEvent.DELETE) {
                     updateTotal();
+                }
+            }
+        });
+        //Custom Action-Listerners - Listen to the change in rows in the "table_payment" and execute the "updateEarnings" function every time
+        table_payment.getModel().addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                //The "updateTotal" function will be called every time when the table rows are updated.
+                if (e.getType() == TableModelEvent.INSERT || e.getType() == TableModelEvent.UPDATE
+                        || e.getType() == TableModelEvent.DELETE) {
+                    updateEarnings();
                 }
             }
         });
@@ -891,6 +959,8 @@ public class dashBoard_gui extends javax.swing.JFrame {
             case 3 -> { // Manager logged in. can see all tabs
                 loadPaymentHistory();
                 loadManagerPaymentType();
+                loadEmployeeTable();
+                loadEmployeeRoles();
                 tf_pay_id.setEnabled(false);
                 tf_pay_balance.setEnabled(false);
             }
@@ -987,7 +1057,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         table_payment = new javax.swing.JTable();
         jLabel55 = new javax.swing.JLabel();
         jPanel13 = new javax.swing.JPanel();
-        jLabel32 = new javax.swing.JLabel();
+        label_earnings = new javax.swing.JLabel();
         jLabel33 = new javax.swing.JLabel();
         jLabel34 = new javax.swing.JLabel();
         jLabel35 = new javax.swing.JLabel();
@@ -1010,8 +1080,9 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jPanel16 = new javax.swing.JPanel();
         jScrollPane3 = new javax.swing.JScrollPane();
         table_emp = new javax.swing.JTable();
+        tf_emp_search = new javax.swing.JTextField();
+        jLabel57 = new javax.swing.JLabel();
         jPanel17 = new javax.swing.JPanel();
-        jLabel40 = new javax.swing.JLabel();
         jLabel41 = new javax.swing.JLabel();
         jLabel42 = new javax.swing.JLabel();
         jLabel43 = new javax.swing.JLabel();
@@ -1516,7 +1587,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
         jPanel6.setBackground(new java.awt.Color(255, 255, 255));
 
         jPanel7.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel7.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Select Show", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("sansserif", 0, 14))); // NOI18N
+        jPanel7.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Select Show", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("sansserif", 0, 14))); // NOI18N
 
         label_show_image.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         label_show_image.setText("image");
@@ -1838,12 +1909,12 @@ public class dashBoard_gui extends javax.swing.JFrame {
         );
 
         jPanel13.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel13.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Payment", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 0, 14))); // NOI18N
+        jPanel13.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Payment", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 0, 14))); // NOI18N
 
-        jLabel32.setFont(new java.awt.Font("Segoe UI", 1, 48)); // NOI18N
-        jLabel32.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel32.setText("5 000 000");
-        jLabel32.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        label_earnings.setFont(new java.awt.Font("Segoe UI", 1, 48)); // NOI18N
+        label_earnings.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        label_earnings.setText("5 000 000");
+        label_earnings.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
         jLabel33.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         jLabel33.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
@@ -1916,7 +1987,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                     .addGroup(jPanel13Layout.createSequentialGroup()
                         .addComponent(jLabel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addContainerGap())
-                    .addComponent(jLabel32, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(label_earnings, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(jPanel13Layout.createSequentialGroup()
                         .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel13Layout.createSequentialGroup()
@@ -1963,9 +2034,9 @@ public class dashBoard_gui extends javax.swing.JFrame {
             jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel13Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabel10, javax.swing.GroupLayout.DEFAULT_SIZE, 24, Short.MAX_VALUE)
+                .addComponent(jLabel10, javax.swing.GroupLayout.DEFAULT_SIZE, 28, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel32, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(label_earnings, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(40, 40, 40)
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel34, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1997,7 +2068,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 .addGap(40, 40, 40)
                 .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel13Layout.createSequentialGroup()
-                        .addComponent(jButton17, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jButton17, javax.swing.GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE)
                         .addGap(63, 63, 63))
                     .addGroup(jPanel13Layout.createSequentialGroup()
                         .addGroup(jPanel13Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -2059,56 +2130,97 @@ public class dashBoard_gui extends javax.swing.JFrame {
             table_emp.getColumnModel().getColumn(0).setPreferredWidth(3);
         }
 
+        tf_emp_search.setText("Search ");
+        tf_emp_search.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                tf_emp_searchFocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                tf_emp_searchFocusLost(evt);
+            }
+        });
+        tf_emp_search.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                tf_emp_searchActionPerformed(evt);
+            }
+        });
+        tf_emp_search.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                tf_emp_searchKeyReleased(evt);
+            }
+        });
+
+        jLabel57.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/icons8-search-23.png"))); // NOI18N
+
         javax.swing.GroupLayout jPanel16Layout = new javax.swing.GroupLayout(jPanel16);
         jPanel16.setLayout(jPanel16Layout);
         jPanel16Layout.setHorizontalGroup(
             jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel16Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 939, Short.MAX_VALUE)
-                .addContainerGap())
+                .addGap(12, 12, 12)
+                .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel16Layout.createSequentialGroup()
+                        .addComponent(jLabel57)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(tf_emp_search, javax.swing.GroupLayout.PREFERRED_SIZE, 254, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 939, Short.MAX_VALUE)))
         );
         jPanel16Layout.setVerticalGroup(
             jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel16Layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel16Layout.createSequentialGroup()
                 .addContainerGap()
+                .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(tf_emp_search)
+                    .addComponent(jLabel57))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane3)
                 .addContainerGap())
         );
 
-        jPanel17.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        jPanel17.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel17.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Employee Details", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 0, 14))); // NOI18N
+        jPanel17.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        jLabel40.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
-        jLabel40.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel40.setText("Employee Details");
-
-        jLabel41.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel41.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel41.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel41.setText("Emp-ID");
+        jPanel17.add(jLabel41, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 50, 130, 40));
 
-        jLabel42.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel42.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel42.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel42.setText("First Name");
+        jPanel17.add(jLabel42, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 110, 130, 40));
 
-        jLabel43.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel43.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel43.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel43.setText("Last Name");
+        jPanel17.add(jLabel43, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 170, 130, 40));
 
-        jLabel44.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel44.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel44.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel44.setText("Role");
+        jPanel17.add(jLabel44, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 220, 130, 40));
 
-        jLabel45.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel45.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel45.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel45.setText("Address");
+        jPanel17.add(jLabel45, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 270, 130, 40));
 
-        jLabel46.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel46.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel46.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel46.setText("Tel No");
+        jPanel17.add(jLabel46, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 330, 130, 40));
 
-        jLabel47.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel47.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel47.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         jLabel47.setText("DOB");
+        jPanel17.add(jLabel47, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 400, 130, 40));
+        jPanel17.add(tf_emp_id, new org.netbeans.lib.awtextra.AbsoluteConstraints(155, 50, 230, 40));
+        jPanel17.add(tf_emp_fname, new org.netbeans.lib.awtextra.AbsoluteConstraints(155, 110, 230, 41));
+        jPanel17.add(tf_emp_lname, new org.netbeans.lib.awtextra.AbsoluteConstraints(155, 170, 230, 42));
+        jPanel17.add(tf_emp_address, new org.netbeans.lib.awtextra.AbsoluteConstraints(155, 270, 230, 39));
+        jPanel17.add(tf_emp_telno, new org.netbeans.lib.awtextra.AbsoluteConstraints(155, 330, 230, 44));
 
         btn_emp_add.setBackground(new java.awt.Color(0, 204, 102));
         btn_emp_add.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
@@ -2119,6 +2231,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_emp_addActionPerformed(evt);
             }
         });
+        jPanel17.add(btn_emp_add, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 500, 180, 50));
 
         btn_emp_update.setBackground(new java.awt.Color(0, 102, 153));
         btn_emp_update.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
@@ -2129,6 +2242,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_emp_updateActionPerformed(evt);
             }
         });
+        jPanel17.add(btn_emp_update, new org.netbeans.lib.awtextra.AbsoluteConstraints(210, 500, 170, 50));
 
         btn_emp_clear.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         btn_emp_clear.setText("CLEAR");
@@ -2137,113 +2251,22 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 btn_emp_clearActionPerformed(evt);
             }
         });
+        jPanel17.add(btn_emp_clear, new org.netbeans.lib.awtextra.AbsoluteConstraints(210, 570, 170, 50));
 
         btn_emp_status.setBackground(new java.awt.Color(204, 0, 51));
         btn_emp_status.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         btn_emp_status.setForeground(new java.awt.Color(255, 255, 255));
-        btn_emp_status.setText("T.STATUS");
+        btn_emp_status.setText("TOGGLE STATUS");
         btn_emp_status.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btn_emp_statusActionPerformed(evt);
             }
         });
+        jPanel17.add(btn_emp_status, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 570, 180, 50));
 
         cb_emp_role.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Select" }));
-
-        javax.swing.GroupLayout jPanel17Layout = new javax.swing.GroupLayout(jPanel17);
-        jPanel17.setLayout(jPanel17Layout);
-        jPanel17Layout.setHorizontalGroup(
-            jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel17Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel40, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(jPanel17Layout.createSequentialGroup()
-                        .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addGroup(jPanel17Layout.createSequentialGroup()
-                                .addComponent(btn_emp_add, javax.swing.GroupLayout.PREFERRED_SIZE, 118, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(18, 18, 18)
-                                .addComponent(btn_emp_update, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addGap(18, 18, 18)
-                                .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(btn_emp_status, javax.swing.GroupLayout.DEFAULT_SIZE, 103, Short.MAX_VALUE)
-                                    .addComponent(btn_emp_clear, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel17Layout.createSequentialGroup()
-                                .addComponent(jLabel42, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(tf_emp_fname, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel17Layout.createSequentialGroup()
-                                .addComponent(jLabel43, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(tf_emp_lname, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel17Layout.createSequentialGroup()
-                                .addComponent(jLabel44, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(cb_emp_role, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel17Layout.createSequentialGroup()
-                                .addComponent(jLabel45, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(tf_emp_address, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel17Layout.createSequentialGroup()
-                                .addComponent(jLabel46, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(tf_emp_telno, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel17Layout.createSequentialGroup()
-                                .addComponent(jLabel47, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(dc_emp_dob, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel17Layout.createSequentialGroup()
-                                .addComponent(jLabel41, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(tf_emp_id, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(0, 10, Short.MAX_VALUE)))
-                .addContainerGap())
-        );
-        jPanel17Layout.setVerticalGroup(
-            jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel17Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel40, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(tf_emp_id)
-                    .addComponent(jLabel41, javax.swing.GroupLayout.DEFAULT_SIZE, 40, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel42, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(tf_emp_fname, javax.swing.GroupLayout.DEFAULT_SIZE, 41, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel43, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(tf_emp_lname, javax.swing.GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel44, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(cb_emp_role, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel17Layout.createSequentialGroup()
-                        .addComponent(tf_emp_address, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(5, 5, 5))
-                    .addComponent(jLabel45, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel46, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(tf_emp_telno, javax.swing.GroupLayout.DEFAULT_SIZE, 44, Short.MAX_VALUE))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel47, javax.swing.GroupLayout.DEFAULT_SIZE, 40, Short.MAX_VALUE)
-                    .addComponent(dc_emp_dob, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(49, 49, 49)
-                .addGroup(jPanel17Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addGroup(jPanel17Layout.createSequentialGroup()
-                        .addComponent(btn_emp_status, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btn_emp_clear, javax.swing.GroupLayout.DEFAULT_SIZE, 35, Short.MAX_VALUE))
-                    .addComponent(btn_emp_add, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(btn_emp_update, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(81, Short.MAX_VALUE))
-        );
+        jPanel17.add(cb_emp_role, new org.netbeans.lib.awtextra.AbsoluteConstraints(155, 220, 230, 40));
+        jPanel17.add(dc_emp_dob, new org.netbeans.lib.awtextra.AbsoluteConstraints(155, 400, 230, 40));
 
         javax.swing.GroupLayout jPanel14Layout = new javax.swing.GroupLayout(jPanel14);
         jPanel14.setLayout(jPanel14Layout);
@@ -2252,14 +2275,15 @@ public class dashBoard_gui extends javax.swing.JFrame {
             .addGroup(jPanel14Layout.createSequentialGroup()
                 .addComponent(jPanel16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel17, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(jPanel17, javax.swing.GroupLayout.DEFAULT_SIZE, 393, Short.MAX_VALUE))
         );
         jPanel14Layout.setVerticalGroup(
             jPanel14Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jPanel16, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(jPanel14Layout.createSequentialGroup()
-                .addComponent(jPanel17, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 78, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel14Layout.createSequentialGroup()
+                .addContainerGap(26, Short.MAX_VALUE)
+                .addComponent(jPanel17, javax.swing.GroupLayout.PREFERRED_SIZE, 717, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
 
         jtp.addTab("Employee", jPanel14);
@@ -2683,6 +2707,8 @@ public class dashBoard_gui extends javax.swing.JFrame {
                     clearShowFields();
                     //Refresh Table after update
                     loadShowTable();
+                    //Reset the dashboard images
+                    setDashboardImages();
                 } else {
                     JOptionPane.showMessageDialog(this, "Eror occured while deleting data!", "Warning", JOptionPane.WARNING_MESSAGE);
                 }
@@ -2714,6 +2740,8 @@ public class dashBoard_gui extends javax.swing.JFrame {
                         clearShowFields();
                         //Refresh Table after update
                         loadShowTable();
+                        //Reset the dashboard images
+                        setDashboardImages();
                     } else { // update was unsuccessful
                         JOptionPane.showMessageDialog(this, "Eror occured while updating data!", "Warning", JOptionPane.WARNING_MESSAGE);
                     }
@@ -2742,6 +2770,8 @@ public class dashBoard_gui extends javax.swing.JFrame {
                 clearShowFields();
                 //Refresh Table after update
                 loadShowTable();
+                //Reset the dashboard images
+                setDashboardImages();
             } else { // Insert was unsuccessful
                 JOptionPane.showMessageDialog(this, "Eror occured while inserting data!", "Warning", JOptionPane.WARNING_MESSAGE);
             }
@@ -3044,6 +3074,35 @@ public class dashBoard_gui extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btn_bookActionPerformed
 
+    private void tf_emp_searchFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_emp_searchFocusGained
+        if (tf_emp_search.getText().equals("Search")) {
+            tf_emp_search.setText("");
+        }
+        tf_emp_search.setForeground(Color.black);
+    }//GEN-LAST:event_tf_emp_searchFocusGained
+
+    private void tf_emp_searchFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_tf_emp_searchFocusLost
+        if (tf_emp_search.getText().isBlank()) {
+            tf_emp_search.setText("Search");
+            tf_emp_search.setForeground(new Color(102, 102, 102));
+        } else {
+            tf_emp_search.setForeground(Color.black);
+        }
+    }//GEN-LAST:event_tf_emp_searchFocusLost
+
+    private void tf_emp_searchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tf_emp_searchActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_tf_emp_searchActionPerformed
+
+    private void tf_emp_searchKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tf_emp_searchKeyReleased
+        //Checking if the search field is empty or not, and invoking the respective methods to fill the table
+        if (!tf_emp_search.getText().isEmpty() || !tf_emp_search.getText().equals("Search")) {
+            loadEmployeeTable(tf_emp_search.getText());
+        } else {
+            loadEmployeeTable();
+        }
+    }//GEN-LAST:event_tf_emp_searchKeyReleased
+
     public static void main(String args[]) {
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
@@ -3119,7 +3178,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel29;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel30;
-    private javax.swing.JLabel jLabel32;
     private javax.swing.JLabel jLabel33;
     private javax.swing.JLabel jLabel34;
     private javax.swing.JLabel jLabel35;
@@ -3127,7 +3185,6 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel37;
     private javax.swing.JLabel jLabel38;
     private javax.swing.JLabel jLabel39;
-    private javax.swing.JLabel jLabel40;
     private javax.swing.JLabel jLabel41;
     private javax.swing.JLabel jLabel42;
     private javax.swing.JLabel jLabel43;
@@ -3138,6 +3195,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel54;
     private javax.swing.JLabel jLabel55;
     private javax.swing.JLabel jLabel56;
+    private javax.swing.JLabel jLabel57;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel10;
@@ -3168,6 +3226,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JLabel label_dashboard_4;
     private javax.swing.JLabel label_dashboard_5;
     private javax.swing.JLabel label_dashboard_6;
+    private javax.swing.JLabel label_earnings;
     private javax.swing.JLabel label_show_image;
     private javax.swing.JLabel label_uname;
     private javax.swing.JPanel seats_panel;
@@ -3182,6 +3241,7 @@ public class dashBoard_gui extends javax.swing.JFrame {
     private javax.swing.JTextField tf_emp_fname;
     private javax.swing.JTextField tf_emp_id;
     private javax.swing.JTextField tf_emp_lname;
+    private javax.swing.JTextField tf_emp_search;
     private javax.swing.JTextField tf_emp_telno;
     private javax.swing.JTextField tf_pay_balance;
     private javax.swing.JTextField tf_pay_given;

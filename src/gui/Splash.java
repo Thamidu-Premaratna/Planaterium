@@ -72,6 +72,7 @@ public class Splash extends javax.swing.JFrame {
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
         } catch (Exception e) {
+            e.printStackTrace();
         }
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {

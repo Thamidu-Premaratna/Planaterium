@@ -21,6 +21,10 @@ public class DbConnect {
                 Class.forName("com.mysql.cj.jdbc.Driver");
                 connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/" + DATABASE, USERNAME, PASSWORD);
             }
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         }
